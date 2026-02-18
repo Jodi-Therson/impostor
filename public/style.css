@@ -1,5 +1,5 @@
 :root {
-    --bg-dark: #020617;
+    --bg-dark: #0f172a;
     --glass: rgba(30, 41, 59, 0.6);
     --glass-border: rgba(255, 255, 255, 0.1);
     --primary: #6366f1;
@@ -10,7 +10,10 @@
     --text-dim: #94a3b8;
 }
 
-* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+* {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+}
 
 body {
     font-family: 'Outfit', sans-serif;
@@ -32,7 +35,7 @@ body {
     display: flex;
     flex-direction: column;
     position: relative;
-    background: rgba(0,0,0,0);
+    background: rgba(0, 0, 0, 0);
 }
 
 @media (min-width: 500px) {
@@ -81,7 +84,9 @@ h1 {
     animation: fadeUp 0.4s ease-out;
 }
 
-.hidden { display: none !important; }
+.hidden {
+    display: none !important;
+}
 
 input {
     width: 100%;
@@ -120,7 +125,14 @@ button {
     font-family: 'Outfit', sans-serif;
 }
 
-button:active { transform: scale(0.97); }
+button:active {
+    transform: scale(0.97);
+}
+
+button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(99, 102, 241, 0.6);
+}
 
 button.danger {
     background: linear-gradient(135deg, var(--danger) 0%, #e11d48 100%);
@@ -128,13 +140,13 @@ button.danger {
 }
 
 button.secondary {
-    background: rgba(255,255,255,0.05);
+    background: rgba(255, 255, 255, 0.05);
     box-shadow: none;
     border: 1px solid var(--glass-border);
 }
 
 .list-item {
-    background: rgba(255,255,255,0.03);
+    background: rgba(255, 255, 255, 0.03);
     border: 1px solid var(--glass-border);
     padding: 16px;
     border-radius: 14px;
@@ -145,7 +157,10 @@ button.secondary {
     transition: all 0.2s;
 }
 
-.list-item.clickable:active { transform: scale(0.98); background: rgba(255,255,255,0.08); }
+.list-item.clickable:active {
+    transform: scale(0.98);
+    background: rgba(255, 255, 255, 0.08);
+}
 
 .list-item.selected {
     border-color: var(--danger);
@@ -156,7 +171,7 @@ button.secondary {
 .avatar {
     width: 32px;
     height: 32px;
-    background: rgba(255,255,255,0.1);
+    background: rgba(255, 255, 255, 0.1);
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -181,8 +196,11 @@ button.secondary {
 .secret-card::before {
     content: '';
     position: absolute;
-    top: -50%; left: -50%; width: 200%; height: 200%;
-    background: radial-gradient(circle, rgba(99,102,241,0.1) 0%, transparent 70%);
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(99, 102, 241, 0.1) 0%, transparent 70%);
     animation: pulse 4s infinite;
 }
 
@@ -206,7 +224,7 @@ button.secondary {
 }
 
 .chat-bubble {
-    background: rgba(255,255,255,0.05);
+    background: rgba(255, 255, 255, 0.05);
     padding: 14px 18px;
     border-radius: 18px;
     border-bottom-left-radius: 4px;
@@ -225,16 +243,37 @@ button.secondary {
 }
 
 .result-box {
-    background: rgba(255,255,255,0.03);
+    background: rgba(255, 255, 255, 0.03);
     border: 1px solid var(--glass-border);
     border-radius: 16px;
     padding: 20px;
     margin: 30px 0;
 }
 
-.label { font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; }
-.value { font-size: 1.2rem; font-weight: 700; float: right; }
+.label {
+    font-size: 0.75rem;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
 
-@keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-@keyframes popIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
-@keyframes pulse { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+.value {
+    font-size: 1.2rem;
+    font-weight: 700;
+    float: right;
+}
+
+@keyframes fadeUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes popIn {
+    from { opacity: 0; transform: scale(0.9); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes pulse {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}

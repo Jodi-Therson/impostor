@@ -63,13 +63,36 @@ socket.on('nextTurn', ({ playerId, round }) => {
         document.getElementById('input-area').classList.add('hidden');
         document.getElementById('wait-msg').classList.remove('hidden');
     }
+
+    // --- RESET TIMER ANIMATION ---
+    const bar = document.getElementById('timer-bar');
+    
+    // Simple trick to restart CSS animation
+    bar.style.transition = 'none';
+    bar.style.width = '100%';
+    
+    // Force browser reflow
+    void bar.offsetWidth; 
+
+    // Start draining
+    bar.style.transition = 'width 30s linear';
+    bar.style.width = '0%';
 });
 
 function sendDesc() {
-    const txt = document.getElementById('desc-input').value;
-    if(!txt) return;
+    const input = document.getElementById('desc-input');
+    const txt = input.value.trim();
+
+    if (!txt) return;
+
+    const wordCount = txt.split(/\s+/).length;
+    if (wordCount > 2) {
+        alert("System limitation: Description must be 1 or 2 words only!");
+        return; 
+    }
+
     socket.emit('sendDescription', { roomCode, text: txt });
-    document.getElementById('desc-input').value = '';
+    input.value = '';
 }
 
 socket.on('newChatMessage', ({ name, text }) => {
@@ -139,4 +162,18 @@ socket.on('resetLobby', () => showScreen('screen-lobby'));
 function leaveRoom() {
     socket.emit('leaveRoom');
     location.reload();
+}
+
+window.onload = () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const roomParam = urlParams.get('room');
+    if (roomParam) {
+        document.getElementById('room-code').value = roomParam;
+    }
+};
+
+function copyInviteLink() {
+    const link = `${window.location.origin}/?room=${roomCode}`;
+    navigator.clipboard.writeText(link);
+    alert("Invite link copied! Send it to your friends.");
 }

@@ -8,6 +8,7 @@ const io = new Server(server);
 app.use(express.static('public'));
 
 let rooms = {};
+let turnTimers = {};
 
 // Expanded Word List
 const WORDS = [
@@ -150,6 +151,10 @@ io.on('connection', (socket) => {
         const room = rooms[roomCode];
         if (!room) return;
 
+        if (text.trim().split(/\s+/).length > 2) {
+            return;
+        }
+
         const player = room.players[room.turnIndex];
 
         // Send Chat
@@ -263,6 +268,44 @@ function handleDisconnect(socket) {
             io.to(roomCode).emit('updateLobby', room.players);
         }
     }
+}
+
+function startTurnTimer(roomCode) {
+    // 1. Clear any existing timer for this room
+    if (turnTimers[roomCode]) clearTimeout(turnTimers[roomCode]);
+
+    // 2. Set new 30-second timer
+    turnTimers[roomCode] = setTimeout(() => {
+        const room = rooms[roomCode];
+        if (!room) return;
+
+        // TIME IS UP! Force a message.
+        const player = room.players[room.turnIndex];
+        const forcedMsg = "[TIMEOUT 😴]";
+        
+        io.to(roomCode).emit('newChatMessage', { name: player.name, text: forcedMsg });
+
+        // Advance turn automatically
+        // (We copy the logic from 'sendDescription' essentially)
+        room.turnIndex++;
+
+        if (room.turnIndex >= room.players.length) {
+            room.turnIndex = 0;
+            room.round++;
+        }
+
+        if (room.round > 2) {
+            room.state = 'voting';
+            io.to(roomCode).emit('startVoting');
+        } else {
+            // Recursively start timer for next player
+            startTurnTimer(roomCode); 
+            io.to(roomCode).emit('nextTurn', { 
+                playerId: room.players[room.turnIndex].id, 
+                round: room.round 
+            });
+        }
+    }, 30000); // 30 Seconds
 }
 
 server.listen(3000, () => {
