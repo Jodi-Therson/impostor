@@ -2,201 +2,370 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mr. White Online</title>
-    <style>
-        :root { --bg: #1a1a1a; --card: #2d2d2d; --blue: #3498db; --red: #e74c3c; --green: #2ecc71; }
-        body { font-family: sans-serif; background: var(--bg); color: white; margin: 0; padding: 20px; text-align: center; }
-        .container { background: var(--card); padding: 20px; border-radius: 15px; max-width: 500px; margin: 0 auto; min-height: 80vh; display: flex; flex-direction: column; }
-        
-        input { width: 80%; padding: 12px; margin: 10px 0; border-radius: 5px; border: 1px solid #555; background: #333; color: white; text-align: center; }
-        button { width: 100%; padding: 15px; margin-top: 10px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; background: var(--blue); color: white; font-size: 1rem; }
-        button:disabled { background: #555; cursor: not-allowed; }
-        
-        .hidden { display: none !important; }
-        .scroll-box { flex-grow: 1; overflow-y: auto; background: #222; margin: 15px 0; padding: 10px; border-radius: 8px; text-align: left; max-height: 400px; }
-        
-        .chat-msg { margin-bottom: 8px; padding: 8px; background: #333; border-radius: 5px; border-left: 3px solid var(--blue); }
-        .chat-name { font-weight: bold; color: #aaa; font-size: 0.8em; margin-bottom: 2px; }
-        
-        .player-item { padding: 12px; background: #333; margin: 5px 0; border-radius: 5px; cursor: pointer; border: 1px solid transparent; }
-        .player-item.selected { border: 2px solid var(--red); background: #4a2c2c; }
-        
-        #my-word { font-size: 2.5rem; color: var(--blue); font-weight: bold; margin: 20px 0; text-transform: uppercase; }
-        .turn-indicator { color: var(--green); font-weight: bold; margin-bottom: 10px; font-size: 1.2rem; }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Mr. White</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
     <script src="/socket.io/socket.io.js"></script>
+    <style>
+        :root {
+            --bg-grad: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --primary: #3b82f6; /* Blue */
+            --accent: #f43f5e; /* Red */
+            --text: #f8fafc;
+            --text-dim: #94a3b8;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-grad);
+            color: var(--text);
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        /* Mobile Container */
+        .app-container {
+            width: 100%;
+            max-width: 450px;
+            height: 100%;
+            max-height: 850px;
+            background: var(--card-bg);
+            backdrop-filter: blur(10px);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        @media (min-width: 500px) {
+            .app-container { border-radius: 24px; height: 90vh; border: 1px solid rgba(255,255,255,0.1); }
+        }
+
+        /* Header */
+        header {
+            padding: 20px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        h1 { margin: 0; font-size: 1.5rem; font-weight: 800; letter-spacing: -0.5px; }
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            background: rgba(255,255,255,0.1);
+            font-size: 0.75rem;
+            margin-top: 5px;
+            color: var(--text-dim);
+        }
+
+        /* Content Areas */
+        .screen {
+            flex: 1;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            transition: opacity 0.3s ease;
+        }
+        .hidden { display: none !important; }
+
+        /* Inputs & Buttons */
+        input {
+            width: 100%;
+            padding: 16px;
+            background: rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+            color: white;
+            font-size: 1rem;
+            margin-bottom: 15px;
+            text-align: center;
+            outline: none;
+            transition: border 0.2s;
+        }
+        input:focus { border-color: var(--primary); }
+
+        button {
+            width: 100%;
+            padding: 16px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: transform 0.1s, opacity 0.2s;
+        }
+        button:active { transform: scale(0.98); }
+        button.secondary { background: rgba(255,255,255,0.1); }
+        button.danger { background: var(--accent); }
+
+        /* Lists */
+        .list-item {
+            background: rgba(255,255,255,0.05);
+            padding: 14px;
+            border-radius: 10px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .list-item.selected { border: 2px solid var(--accent); background: rgba(244, 63, 94, 0.1); }
+
+        /* Game Elements */
+        .secret-card {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(59, 130, 246, 0.05));
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            padding: 30px;
+            border-radius: 16px;
+            text-align: center;
+            margin: 20px 0;
+        }
+        .word-reveal { font-size: 2.5rem; font-weight: 800; color: #60a5fa; margin: 10px 0; }
+        
+        /* Chat */
+        .chat-area {
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin: 10px 0;
+            padding-right: 5px;
+        }
+        .chat-bubble {
+            background: rgba(255,255,255,0.08);
+            padding: 12px 16px;
+            border-radius: 12px;
+            font-size: 0.95rem;
+            animation: fadeIn 0.3s ease;
+        }
+        .chat-meta { font-size: 0.75rem; color: var(--text-dim); margin-bottom: 4px; font-weight: 600; }
+        
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+    </style>
 </head>
 <body>
 
-    <div id="login-screen" class="container">
-        <h1>Mr. White Online</h1>
-        <p>Enter name & room code to play</p>
-        <input type="text" id="username" placeholder="Your Name">
-        <input type="text" id="room-code" placeholder="Room Code (e.g. 1234)">
-        <button onclick="joinGame()">Join Game</button>
-    </div>
+    <div class="app-container">
+        <header>
+            <h1>Mr. White</h1>
+            <div id="status-bar" class="status-badge">Offline</div>
+        </header>
 
-    <div id="lobby-screen" class="container hidden">
-        <h2>Lobby</h2>
-        <p>Share the Room Code with friends!</p>
-        <div id="lobby-list" class="scroll-box"></div>
-        <button id="start-btn" onclick="requestStart()" class="hidden">Start Game</button>
-    </div>
-
-    <div id="game-screen" class="container hidden">
-        <div class="turn-indicator" id="turn-status">Waiting...</div>
-        <div>Your Secret Word:</div>
-        <div id="my-word">???</div>
-        
-        <div id="chat-box" class="scroll-box"></div>
-        
-        <div id="input-area" class="hidden">
-            <input type="text" id="desc-input" placeholder="Type your description...">
-            <button onclick="sendDesc()">Send</button>
+        <div id="screen-login" class="screen">
+            <div style="flex:1; display:flex; flex-direction:column; justify-content:center;">
+                <p style="text-align:center; color:#94a3b8; margin-bottom:30px;">Enter your name and a room code to play with friends.</p>
+                <input type="text" id="username" placeholder="Your Name">
+                <input type="number" id="room-code" placeholder="Room Code (e.g. 1001)">
+                <button onclick="joinGame()">Join Room</button>
+            </div>
         </div>
-    </div>
 
-    <div id="vote-screen" class="container hidden">
-        <h2 style="color:var(--red)">Who is Mr. White?</h2>
-        <p>Tap a player to vote:</p>
-        <div id="vote-list" class="scroll-box"></div>
-        <button onclick="submitVote()">Confirm Vote</button>
-    </div>
-
-    <div id="result-screen" class="container hidden">
-        <h1>Game Over</h1>
-        <div id="result-msg"></div>
-        <div style="margin-top:20px; text-align:left; background:#222; padding:15px; border-radius:10px;">
-            <p>Impostor Word: <b id="res-imp" style="color:var(--red); float:right"></b></p>
-            <p>Civilian Word: <b id="res-civ" style="color:var(--blue); float:right"></b></p>
+        <div id="screen-lobby" class="screen hidden">
+            <h3 style="text-align:center;">Waiting for Players...</h3>
+            <div id="lobby-list" style="flex:1; overflow-y:auto;"></div>
+            <div id="host-controls" class="hidden">
+                <button onclick="startGame()">Start Game</button>
+            </div>
+            <p style="text-align:center; font-size:0.8rem; opacity:0.5; margin-top:20px;">Share the Room Code!</p>
         </div>
-        <button onclick="requestRestart()">Play Again</button>
+
+        <div id="screen-game" class="screen hidden">
+            <div class="secret-card">
+                <div style="font-size:0.8rem; text-transform:uppercase; letter-spacing:1px; opacity:0.7;">Your Secret Word</div>
+                <div id="my-word" class="word-reveal">???</div>
+            </div>
+
+            <div id="game-chat" class="chat-area"></div>
+
+            <div id="input-area" class="hidden">
+                <input type="text" id="desc-input" placeholder="Describe your word..." autocomplete="off">
+                <button onclick="sendDesc()">Send Description</button>
+            </div>
+            <div id="wait-msg" style="text-align:center; padding:15px; color:var(--text-dim);">
+                Waiting for other player...
+            </div>
+        </div>
+
+        <div id="screen-vote" class="screen hidden">
+            <h2 style="text-align:center; color:var(--accent);">Vote the Impostor</h2>
+            <p style="text-align:center; opacity:0.7;">Who is Mr. White?</p>
+            <div id="vote-list" style="flex:1; overflow-y:auto;"></div>
+            <button class="danger" onclick="submitVote()">Eliminate Player</button>
+        </div>
+
+        <div id="screen-result" class="screen hidden">
+            <div style="text-align:center; margin-top:30px;">
+                <h1 id="winner-title" style="font-size:2.5rem; margin-bottom:10px;">Winner!</h1>
+                <p id="winner-desc" style="color:var(--text-dim);">Result description</p>
+            </div>
+
+            <div style="background:rgba(255,255,255,0.05); border-radius:16px; padding:20px; margin:30px 0;">
+                <div class="list-item">
+                    <span>Impostor Word</span>
+                    <strong id="res-imp-word" style="color:var(--accent)">-</strong>
+                </div>
+                <div class="list-item">
+                    <span>Civilian Word</span>
+                    <strong id="res-civ-word" style="color:var(--primary)">-</strong>
+                </div>
+            </div>
+
+            <button onclick="restartGame()">Play Again</button>
+        </div>
     </div>
 
     <script>
         const socket = io();
-        let roomCode = "";
-        let selectedVote = null;
-        let allPlayers = [];
+        let myId, roomCode, selectedVote;
 
-        // JOIN
+        // --- DOM HELPER ---
+        function showScreen(id) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
+            document.getElementById(id).classList.remove('hidden');
+        }
+        function updateStatus(text) { document.getElementById('status-bar').innerText = text; }
+
+        // --- LOGIC ---
         function joinGame() {
             const name = document.getElementById('username').value;
             roomCode = document.getElementById('room-code').value;
-            if(!name || !roomCode) return alert("Enter name and code!");
+            if(!name || !roomCode) return alert("Please fill in all fields");
             
             socket.emit('joinRoom', { roomCode, name });
-            document.getElementById('login-screen').classList.add('hidden');
-            document.getElementById('lobby-screen').classList.remove('hidden');
+            updateStatus(`Room: ${roomCode}`);
+            showScreen('screen-lobby');
         }
 
         socket.on('updateLobby', (players) => {
             const list = document.getElementById('lobby-list');
-            list.innerHTML = players.map(p => `<div class='player-item'>${p.name}</div>`).join('');
+            list.innerHTML = players.map(p => `
+                <div class="list-item">
+                    <span style="font-weight:600">${p.name}</span>
+                </div>
+            `).join('');
         });
 
-        socket.on('youJoined', (data) => {
-            if(data.isHost) document.getElementById('start-btn').classList.remove('hidden');
+        socket.on('youJoined', ({ isHost }) => {
+            if(isHost) document.getElementById('host-controls').classList.remove('hidden');
         });
 
-        // START
-        function requestStart() { socket.emit('startGame', roomCode); }
+        function startGame() { socket.emit('startGame', roomCode); }
 
         socket.on('gameStarted', ({ players }) => {
-            allPlayers = players;
-            document.getElementById('lobby-screen').classList.add('hidden');
-            document.getElementById('result-screen').classList.add('hidden');
-            document.getElementById('game-screen').classList.remove('hidden');
-            document.getElementById('chat-box').innerHTML = ''; 
-
+            showScreen('screen-game');
             const me = players.find(p => p.id === socket.id);
-            document.getElementById('my-word').textContent = me.word;
+            document.getElementById('my-word').innerText = me.word;
+            document.getElementById('game-chat').innerHTML = ''; // Clear chat
         });
 
-        // TURN
         socket.on('nextTurn', ({ playerId, round }) => {
-            const isMyTurn = (playerId === socket.id);
-            const status = document.getElementById('turn-status');
-            const inputArea = document.getElementById('input-area');
-
-            if (isMyTurn) {
-                status.textContent = `Round ${round}: YOUR TURN!`;
-                inputArea.classList.remove('hidden');
+            const isMe = playerId === socket.id;
+            updateStatus(`Round ${round}`);
+            
+            if(isMe) {
+                document.getElementById('input-area').classList.remove('hidden');
+                document.getElementById('wait-msg').classList.add('hidden');
             } else {
-                status.textContent = `Round ${round}: Waiting for player...`;
-                inputArea.classList.add('hidden');
+                document.getElementById('input-area').classList.add('hidden');
+                document.getElementById('wait-msg').classList.remove('hidden');
             }
         });
 
         function sendDesc() {
-            const input = document.getElementById('desc-input');
-            const text = input.value;
-            if(!text) return;
-            socket.emit('sendDescription', { roomCode, text });
-            input.value = '';
+            const txt = document.getElementById('desc-input').value;
+            if(!txt) return;
+            socket.emit('sendDescription', { roomCode, text: txt });
+            document.getElementById('desc-input').value = '';
         }
 
-        socket.on('newChatMessage', (msg) => {
-            const box = document.getElementById('chat-box');
-            box.innerHTML += `
-                <div class="chat-msg">
-                    <div class="chat-name">${msg.name} (Round ${msg.round})</div>
-                    <div>${msg.text}</div>
-                </div>`;
-            box.scrollTop = box.scrollHeight;
+        socket.on('newChatMessage', ({ name, text, round }) => {
+            const chat = document.getElementById('game-chat');
+            chat.innerHTML += `
+                <div class="chat-bubble">
+                    <div class="chat-meta">${name}</div>
+                    <div>${text}</div>
+                </div>
+            `;
+            chat.scrollTop = chat.scrollHeight;
         });
 
-        // VOTE
         socket.on('startVoting', () => {
-            document.getElementById('game-screen').classList.add('hidden');
-            document.getElementById('vote-screen').classList.remove('hidden');
-            
+            showScreen('screen-vote');
+            // Re-render list for voting (simple implementation)
+            // Ideally server sends list, but we can grab from lobby cache if needed
+            // For now, let's request list or assume lobby state persists.
+            // *Fix*: We will just use the lobby list html but add onclicks
+            // Better: socket.on('voteList', players => ...)
+        });
+
+        // *Fixing Vote List*: We need the players list. 
+        // Let's store players globally on game start
+        let g_players = [];
+        socket.on('gameStarted', ({players}) => { g_players = players; /*...*/ });
+
+        socket.on('startVoting', () => {
+            showScreen('screen-vote');
             const list = document.getElementById('vote-list');
-            list.innerHTML = allPlayers.map(p => 
-                `<div class='player-item' onclick='selectVote("${p.id}", this)'>${p.name}</div>`
-            ).join('');
+            list.innerHTML = g_players.map(p => `
+                <div class="list-item" onclick="selectVote('${p.id}', this)">
+                    <span>${p.name}</span>
+                </div>
+            `).join('');
         });
 
         function selectVote(id, el) {
             selectedVote = id;
-            document.querySelectorAll('#vote-list .player-item').forEach(d => d.classList.remove('selected'));
+            document.querySelectorAll('.list-item').forEach(e => e.classList.remove('selected'));
             el.classList.add('selected');
         }
 
         function submitVote() {
-            if(!selectedVote) return alert("Select someone!");
+            if(!selectedVote) return;
             socket.emit('submitVote', { roomCode, targetId: selectedVote });
-            document.getElementById('vote-screen').innerHTML = "<h2>Waiting for others...</h2>";
+            document.getElementById('screen-vote').innerHTML = "<h2 style='text-align:center'>Waiting for results...</h2>";
         }
 
-        // RESULT
         socket.on('gameOver', (data) => {
-            document.getElementById('vote-screen').classList.add('hidden');
-            document.getElementById('result-screen').classList.remove('hidden');
+            showScreen('screen-result');
+            const title = document.getElementById('winner-title');
+            const desc = document.getElementById('winner-desc');
             
-            // Reset vote screen for next time
-            document.getElementById('vote-screen').innerHTML = `<h2 style="color:var(--red)">Who is Mr. White?</h2><p>Tap a player to vote:</p><div id="vote-list" class="scroll-box"></div><button onclick="submitVote()">Confirm Vote</button>`;
-
-            const resDiv = document.getElementById('result-msg');
             if(data.wasImpostor) {
-                resDiv.innerHTML = `<h2 style="color:var(--green)">Civilians Win!</h2><p>You caught ${data.eliminatedName}!</p>`;
+                title.innerText = "Civilians Win!";
+                title.style.color = "var(--primary)";
+                desc.innerText = `You caught ${data.impostorName}!`;
             } else {
-                resDiv.innerHTML = `<h2 style="color:var(--red)">Mr. White Wins!</h2><p>You voted out ${data.eliminatedName} (Civilian).</p>`;
+                title.innerText = "Mr. White Wins!";
+                title.style.color = "var(--accent)";
+                desc.innerText = `${data.impostorName} was not caught!`;
             }
 
-            document.getElementById('res-imp').textContent = `${data.impostorName} (${data.impWord})`;
-            document.getElementById('res-civ').textContent = data.civWord;
+            document.getElementById('res-imp-word').innerText = data.impWord;
+            document.getElementById('res-civ-word').innerText = data.civWord;
+            
+            // Restore Vote Screen for next time
+            document.getElementById('screen-vote').innerHTML = `
+                <h2 style="text-align:center; color:var(--accent);">Vote the Impostor</h2>
+                <div id="vote-list" style="flex:1; overflow-y:auto;"></div>
+                <button class="danger" onclick="submitVote()">Eliminate Player</button>
+            `;
         });
 
-        function requestRestart() {
-            socket.emit('restartGame', roomCode);
-        }
+        function restartGame() { socket.emit('restartGame', roomCode); }
+        socket.on('resetLobby', () => showScreen('screen-lobby'));
 
-        socket.on('resetLobby', () => {
-            document.getElementById('result-screen').classList.add('hidden');
-            document.getElementById('lobby-screen').classList.remove('hidden');
-        });
     </script>
 </body>
 </html>
