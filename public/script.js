@@ -137,15 +137,23 @@ socket.on('gameOver', (data) => {
     const desc = document.getElementById('winner-desc');
     const icon = document.getElementById('winner-icon');
     
-    if(data.wasImpostor) {
-        title.innerText = "Civilians Win";
+    // Check for TIE first
+    if (data.resultType === 'tie') {
+        title.innerText = "Impostor Wins (Tie Vote)";
+        title.style.color = "var(--danger)";
+        desc.innerText = `The group couldn't agree. The Impostor (${data.impostorName}) escaped!`;
+        icon.innerText = "🤝";
+    } 
+    // Normal Win Conditions
+    else if (data.wasImpostor) {
+        title.innerText = "Civilians Win!";
         title.style.color = "var(--primary)";
-        desc.innerText = `The Impostor (${data.impostorName}) was eliminated.`;
+        desc.innerText = `You caught the Impostor (${data.impostorName})!`;
         icon.innerText = "🛡️";
     } else {
-        title.innerText = "Impostor Wins";
+        title.innerText = "Impostor Wins!";
         title.style.color = "var(--danger)";
-        desc.innerText = `${data.impostorName} survived the vote.`;
+        desc.innerText = `You voted out ${data.eliminatedName} (Civilian). The Impostor was ${data.impostorName}.`;
         icon.innerText = "🔪";
     }
 

@@ -207,24 +207,54 @@ io.on('connection', (socket) => {
 
             // Find Loser
             let maxVotes = -1;
-            let eliminatedId = null;
+            let candidates = []; // Array to hold everyone with the highest votes
+
             for (const [pid, count] of Object.entries(voteCounts)) {
                 if (count > maxVotes) {
+                    // New highest vote found
                     maxVotes = count;
-                    eliminatedId = pid;
+                    candidates = [pid]; 
+                } else if (count === maxVotes) {
+                    // Tie found! Add to candidates
+                    candidates.push(pid);
                 }
             }
 
-            const impostor = room.players.find(p => p.id === room.impostorId);
-            const eliminated = room.players.find(p => p.id === eliminatedId);
-            const wasImpostor = (eliminatedId === room.impostorId);
+            // 2. Check for Tie
+            let eliminatedId = null;
+            let resultType = ""; // To tell client what happened
 
+            if (candidates.length > 1) {
+                // TIE DETECTED -> IMPOSTOR WINS
+                eliminatedId = null; // No one eliminated
+                resultType = "tie";
+            } else {
+                // SINGLE LOSER
+                eliminatedId = candidates[0];
+                resultType = "elimination";
+            }
+
+            // 3. Determine Game Over State
+            const impostor = room.players.find(p => p.id === room.impostorId);
+            let eliminated = eliminatedId ? room.players.find(p => p.id === eliminatedId) : null;
+            
+            let civsWin = false;
+            if (resultType === "tie") {
+                civsWin = false;
+            } else if (eliminatedId === room.impostorId) {
+                civsWin = true;
+            } else {
+                civsWin = false;
+            }
+
+            // 4. Send Results
             io.to(roomCode).emit('gameOver', {
                 impostorName: impostor ? impostor.name : "Unknown",
                 civWord: room.civWord,
                 impWord: room.impWord,
-                eliminatedName: eliminated ? eliminated.name : "Unknown",
-                wasImpostor
+                eliminatedName: eliminated ? eliminated.name : "No one (Tie)",
+                wasImpostor: civsWin, 
+                resultType: resultType 
             });
         }
     });
