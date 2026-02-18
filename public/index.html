@@ -3,24 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Mr. White</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <title>Mr. Impostor</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;500;700&display=swap" rel="stylesheet">
     <script src="/socket.io/socket.io.js"></script>
     <style>
         :root {
-            --bg-grad: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-            --card-bg: rgba(30, 41, 59, 0.7);
-            --primary: #3b82f6; /* Blue */
-            --accent: #f43f5e; /* Red */
+            --bg-dark: #020617;
+            --glass: rgba(30, 41, 59, 0.6);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --primary: #6366f1;
+            --primary-glow: rgba(99, 102, 241, 0.4);
+            --danger: #f43f5e;
+            --danger-glow: rgba(244, 63, 94, 0.4);
             --text: #f8fafc;
             --text-dim: #94a3b8;
         }
 
-        * { box-sizing: border-box; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
         body {
-            font-family: 'Inter', sans-serif;
-            background: var(--bg-grad);
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg-dark);
+            background-image: radial-gradient(circle at 50% 0%, #1e293b 0%, var(--bg-dark) 70%);
             color: var(--text);
             margin: 0;
             height: 100vh;
@@ -30,128 +34,213 @@
             overflow: hidden;
         }
 
-        /* Mobile Container */
         .app-container {
             width: 100%;
-            max-width: 450px;
+            max-width: 480px;
             height: 100%;
-            max-height: 850px;
-            background: var(--card-bg);
-            backdrop-filter: blur(10px);
             display: flex;
             flex-direction: column;
             position: relative;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            background: rgba(0,0,0,0);
         }
 
         @media (min-width: 500px) {
-            .app-container { border-radius: 24px; height: 90vh; border: 1px solid rgba(255,255,255,0.1); }
+            .app-container {
+                height: 90vh;
+                border-radius: 24px;
+                background: var(--glass);
+                backdrop-filter: blur(20px);
+                border: 1px solid var(--glass-border);
+                box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+                overflow: hidden;
+            }
         }
 
-        /* Header */
         header {
-            padding: 20px;
+            padding: 25px 20px 15px;
             text-align: center;
-            border-bottom: 1px solid rgba(255,255,255,0.05);
-        }
-        h1 { margin: 0; font-size: 1.5rem; font-weight: 800; letter-spacing: -0.5px; }
-        .status-badge {
-            display: inline-block;
-            padding: 4px 12px;
-            border-radius: 20px;
-            background: rgba(255,255,255,0.1);
-            font-size: 0.75rem;
-            margin-top: 5px;
-            color: var(--text-dim);
+            z-index: 10;
         }
 
-        /* Content Areas */
+        h1 {
+            margin: 0;
+            font-size: 1.8rem;
+            font-weight: 700;
+            letter-spacing: -1px;
+            background: linear-gradient(to right, #fff, #94a3b8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .status-badge {
+            font-size: 0.75rem;
+            color: var(--primary);
+            font-weight: 500;
+            margin-top: 5px;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
         .screen {
             flex: 1;
             padding: 20px;
             display: flex;
             flex-direction: column;
             overflow-y: auto;
-            transition: opacity 0.3s ease;
+            animation: fadeUp 0.4s ease-out;
         }
+        
         .hidden { display: none !important; }
 
-        /* Inputs & Buttons */
         input {
             width: 100%;
-            padding: 16px;
-            background: rgba(0,0,0,0.3);
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 12px;
+            padding: 18px;
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
             color: white;
-            font-size: 1rem;
+            font-size: 1.1rem;
             margin-bottom: 15px;
             text-align: center;
             outline: none;
-            transition: border 0.2s;
+            transition: all 0.3s ease;
+            font-family: 'Outfit', sans-serif;
         }
-        input:focus { border-color: var(--primary); }
+
+        input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 15px var(--primary-glow);
+            background: rgba(15, 23, 42, 0.9);
+        }
 
         button {
             width: 100%;
-            padding: 16px;
-            background: var(--primary);
+            padding: 18px;
+            background: linear-gradient(135deg, var(--primary) 0%, #4f46e5 100%);
             color: white;
             border: none;
-            border-radius: 12px;
-            font-weight: 600;
+            border-radius: 16px;
+            font-weight: 700;
             font-size: 1rem;
             cursor: pointer;
             margin-top: 10px;
-            transition: transform 0.1s, opacity 0.2s;
+            box-shadow: 0 4px 15px var(--primary-glow);
+            transition: transform 0.2s, box-shadow 0.2s;
+            font-family: 'Outfit', sans-serif;
         }
-        button:active { transform: scale(0.98); }
-        button.secondary { background: rgba(255,255,255,0.1); }
-        button.danger { background: var(--accent); }
 
-        /* Lists */
-        .list-item {
-            background: rgba(255,255,255,0.05);
-            padding: 14px;
-            border-radius: 10px;
-            margin-bottom: 8px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .list-item.selected { border: 2px solid var(--accent); background: rgba(244, 63, 94, 0.1); }
-
-        /* Game Elements */
-        .secret-card {
-            background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(59, 130, 246, 0.05));
-            border: 1px solid rgba(59, 130, 246, 0.3);
-            padding: 30px;
-            border-radius: 16px;
-            text-align: center;
-            margin: 20px 0;
-        }
-        .word-reveal { font-size: 2.5rem; font-weight: 800; color: #60a5fa; margin: 10px 0; }
+        button:active { transform: scale(0.97); }
         
-        /* Chat */
+        button.danger {
+            background: linear-gradient(135deg, var(--danger) 0%, #e11d48 100%);
+            box-shadow: 0 4px 15px var(--danger-glow);
+        }
+
+        .list-item {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--glass-border);
+            padding: 16px;
+            border-radius: 14px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: all 0.2s;
+        }
+
+        .list-item.clickable:active { transform: scale(0.98); background: rgba(255,255,255,0.08); }
+        
+        .list-item.selected {
+            border-color: var(--danger);
+            background: rgba(244, 63, 94, 0.1);
+            box-shadow: 0 0 15px var(--danger-glow) inset;
+        }
+
+        .avatar {
+            width: 32px;
+            height: 32px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.8rem;
+            color: var(--text-dim);
+        }
+
+        .secret-card {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid var(--primary);
+            box-shadow: 0 0 20px var(--primary-glow);
+            padding: 40px 20px;
+            border-radius: 20px;
+            text-align: center;
+            margin: 10px 0 20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .secret-card::before {
+            content: '';
+            position: absolute;
+            top: -50%; left: -50%; width: 200%; height: 200%;
+            background: radial-gradient(circle, rgba(99,102,241,0.1) 0%, transparent 70%);
+            animation: pulse 4s infinite;
+        }
+
+        .word-reveal {
+            font-size: 2.8rem;
+            font-weight: 700;
+            color: #fff;
+            margin: 15px 0;
+            text-shadow: 0 0 10px var(--primary);
+            position: relative;
+        }
+        
         .chat-area {
             flex: 1;
             overflow-y: auto;
             display: flex;
             flex-direction: column;
-            gap: 10px;
-            margin: 10px 0;
-            padding-right: 5px;
+            gap: 12px;
+            margin-bottom: 15px;
+            padding: 10px 5px;
         }
+
         .chat-bubble {
-            background: rgba(255,255,255,0.08);
-            padding: 12px 16px;
-            border-radius: 12px;
+            background: rgba(255,255,255,0.05);
+            padding: 14px 18px;
+            border-radius: 18px;
+            border-bottom-left-radius: 4px;
             font-size: 0.95rem;
-            animation: fadeIn 0.3s ease;
+            line-height: 1.4;
+            backdrop-filter: blur(5px);
+            animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
-        .chat-meta { font-size: 0.75rem; color: var(--text-dim); margin-bottom: 4px; font-weight: 600; }
+
+        .chat-meta {
+            font-size: 0.7rem;
+            color: var(--primary);
+            margin-bottom: 4px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
         
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        .result-box {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 20px;
+            margin: 30px 0;
+        }
+
+        .label { font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; }
+        .value { font-size: 1.2rem; font-weight: 700; float: right; }
+
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes popIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
+        @keyframes pulse { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
     </style>
 </head>
@@ -159,100 +248,111 @@
 
     <div class="app-container">
         <header>
-            <h1>Mr. White</h1>
-            <div id="status-bar" class="status-badge">Offline</div>
+            <h1>Mr. Impostor</h1>
+            <div id="status-bar" class="status-badge">Disconnected</div>
         </header>
 
         <div id="screen-login" class="screen">
             <div style="flex:1; display:flex; flex-direction:column; justify-content:center;">
-                <p style="text-align:center; color:#94a3b8; margin-bottom:30px;">Enter your name and a room code to play with friends.</p>
-                <input type="text" id="username" placeholder="Your Name">
-                <input type="number" id="room-code" placeholder="Room Code (e.g. 1001)">
-                <button onclick="joinGame()">Join Room</button>
+                <div style="text-align:center; margin-bottom:40px; opacity:0.8;">
+                    <div style="font-size:3rem; margin-bottom:10px;">🕵️</div>
+                    <p style="color:var(--text-dim);">Enter your identity to join the mission.</p>
+                </div>
+                <input type="text" id="username" placeholder="Codename (Name)">
+                <input type="number" id="room-code" placeholder="Mission Code (Room)">
+                <button onclick="joinGame()">Initialize Link</button>
             </div>
         </div>
 
         <div id="screen-lobby" class="screen hidden">
-            <h3 style="text-align:center;">Waiting for Players...</h3>
+            <h3 style="text-align:center; font-weight:400; color:var(--text-dim);">Agents in Lobby</h3>
             <div id="lobby-list" style="flex:1; overflow-y:auto;"></div>
+            
             <div id="host-controls" class="hidden">
-                <button onclick="startGame()">Start Game</button>
+                <button onclick="startGame()">Start Mission</button>
             </div>
-            <p style="text-align:center; font-size:0.8rem; opacity:0.5; margin-top:20px;">Share the Room Code!</p>
+            <p style="text-align:center; font-size:0.8rem; color:var(--text-dim); margin-top:20px; opacity:0.6;">
+                Waiting for host...
+            </p>
         </div>
 
         <div id="screen-game" class="screen hidden">
             <div class="secret-card">
-                <div style="font-size:0.8rem; text-transform:uppercase; letter-spacing:1px; opacity:0.7;">Your Secret Word</div>
+                <div class="label" style="color:var(--text-dim);">Your Secret Identity</div>
                 <div id="my-word" class="word-reveal">???</div>
             </div>
 
             <div id="game-chat" class="chat-area"></div>
 
             <div id="input-area" class="hidden">
-                <input type="text" id="desc-input" placeholder="Describe your word..." autocomplete="off">
-                <button onclick="sendDesc()">Send Description</button>
+                <input type="text" id="desc-input" placeholder="Type your description..." autocomplete="off">
+                <button onclick="sendDesc()">Transmit</button>
             </div>
-            <div id="wait-msg" style="text-align:center; padding:15px; color:var(--text-dim);">
-                Waiting for other player...
+            <div id="wait-msg" style="text-align:center; padding:20px; color:var(--text-dim); font-style:italic;">
+                Receiving transmission from other agent...
             </div>
         </div>
 
         <div id="screen-vote" class="screen hidden">
-            <h2 style="text-align:center; color:var(--accent);">Vote the Impostor</h2>
-            <p style="text-align:center; opacity:0.7;">Who is Mr. White?</p>
+            <div style="text-align:center; margin-bottom:20px;">
+                <h2 style="color:var(--danger); margin:0;">Identify the Impostor</h2>
+                <p style="color:var(--text-dim); font-size:0.9rem;">Tap an agent to cast your vote.</p>
+            </div>
             <div id="vote-list" style="flex:1; overflow-y:auto;"></div>
-            <button class="danger" onclick="submitVote()">Eliminate Player</button>
+            <button class="danger" onclick="submitVote()">Eliminate Agent</button>
         </div>
 
         <div id="screen-result" class="screen hidden">
-            <div style="text-align:center; margin-top:30px;">
-                <h1 id="winner-title" style="font-size:2.5rem; margin-bottom:10px;">Winner!</h1>
+            <div style="text-align:center; margin-top:40px;">
+                <div id="winner-icon" style="font-size:4rem; margin-bottom:10px;">🏆</div>
+                <h1 id="winner-title" style="font-size:2.2rem; margin-bottom:10px;">Winner!</h1>
                 <p id="winner-desc" style="color:var(--text-dim);">Result description</p>
             </div>
 
-            <div style="background:rgba(255,255,255,0.05); border-radius:16px; padding:20px; margin:30px 0;">
-                <div class="list-item">
-                    <span>Impostor Word</span>
-                    <strong id="res-imp-word" style="color:var(--accent)">-</strong>
+            <div class="result-box">
+                <div style="margin-bottom:15px; overflow:hidden;">
+                    <span class="label">Impostor Word</span>
+                    <span id="res-imp-word" class="value" style="color:var(--danger)">-</span>
                 </div>
-                <div class="list-item">
-                    <span>Civilian Word</span>
-                    <strong id="res-civ-word" style="color:var(--primary)">-</strong>
+                <div style="overflow:hidden;">
+                    <span class="label">Civilian Word</span>
+                    <span id="res-civ-word" class="value" style="color:var(--primary)">-</span>
                 </div>
             </div>
 
-            <button onclick="restartGame()">Play Again</button>
+            <button onclick="restartGame()">Replay Mission</button>
         </div>
     </div>
 
     <script>
         const socket = io();
         let myId, roomCode, selectedVote;
+        let globalPlayers = []; // Store players for vote rendering
 
-        // --- DOM HELPER ---
         function showScreen(id) {
             document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
             document.getElementById(id).classList.remove('hidden');
         }
         function updateStatus(text) { document.getElementById('status-bar').innerText = text; }
 
-        // --- LOGIC ---
+        // --- JOIN ---
         function joinGame() {
             const name = document.getElementById('username').value;
             roomCode = document.getElementById('room-code').value;
-            if(!name || !roomCode) return alert("Please fill in all fields");
+            if(!name || !roomCode) return alert("Codename and Mission Code required.");
             
             socket.emit('joinRoom', { roomCode, name });
-            updateStatus(`Room: ${roomCode}`);
+            updateStatus(`Code: ${roomCode}`);
             showScreen('screen-lobby');
         }
 
         socket.on('updateLobby', (players) => {
+            globalPlayers = players; // Update local cache
             const list = document.getElementById('lobby-list');
             list.innerHTML = players.map(p => `
                 <div class="list-item">
-                    <span style="font-weight:600">${p.name}</span>
+                    <div class="avatar">${p.name.substring(0,2).toUpperCase()}</div>
+                    <span style="font-weight:500">${p.name}</span>
                 </div>
             `).join('');
         });
@@ -261,13 +361,15 @@
             if(isHost) document.getElementById('host-controls').classList.remove('hidden');
         });
 
+        // --- GAME ---
         function startGame() { socket.emit('startGame', roomCode); }
 
         socket.on('gameStarted', ({ players }) => {
+            globalPlayers = players; // Update local cache with roles (roles hidden in object but good to have list)
             showScreen('screen-game');
             const me = players.find(p => p.id === socket.id);
             document.getElementById('my-word').innerText = me.word;
-            document.getElementById('game-chat').innerHTML = ''; // Clear chat
+            document.getElementById('game-chat').innerHTML = ''; 
         });
 
         socket.on('nextTurn', ({ playerId, round }) => {
@@ -277,6 +379,7 @@
             if(isMe) {
                 document.getElementById('input-area').classList.remove('hidden');
                 document.getElementById('wait-msg').classList.add('hidden');
+                document.getElementById('desc-input').focus();
             } else {
                 document.getElementById('input-area').classList.add('hidden');
                 document.getElementById('wait-msg').classList.remove('hidden');
@@ -290,7 +393,7 @@
             document.getElementById('desc-input').value = '';
         }
 
-        socket.on('newChatMessage', ({ name, text, round }) => {
+        socket.on('newChatMessage', ({ name, text }) => {
             const chat = document.getElementById('game-chat');
             chat.innerHTML += `
                 <div class="chat-bubble">
@@ -301,26 +404,15 @@
             chat.scrollTop = chat.scrollHeight;
         });
 
-        socket.on('startVoting', () => {
-            showScreen('screen-vote');
-            // Re-render list for voting (simple implementation)
-            // Ideally server sends list, but we can grab from lobby cache if needed
-            // For now, let's request list or assume lobby state persists.
-            // *Fix*: We will just use the lobby list html but add onclicks
-            // Better: socket.on('voteList', players => ...)
-        });
-
-        // *Fixing Vote List*: We need the players list. 
-        // Let's store players globally on game start
-        let g_players = [];
-        socket.on('gameStarted', ({players}) => { g_players = players; /*...*/ });
-
+        // --- VOTING ---
         socket.on('startVoting', () => {
             showScreen('screen-vote');
             const list = document.getElementById('vote-list');
-            list.innerHTML = g_players.map(p => `
-                <div class="list-item" onclick="selectVote('${p.id}', this)">
-                    <span>${p.name}</span>
+            // Use globalPlayers to render list
+            list.innerHTML = globalPlayers.map(p => `
+                <div class="list-item clickable" onclick="selectVote('${p.id}', this)">
+                    <div class="avatar">${p.name.substring(0,2).toUpperCase()}</div>
+                    <span style="font-weight:500">${p.name}</span>
                 </div>
             `).join('');
         });
@@ -334,33 +426,30 @@
         function submitVote() {
             if(!selectedVote) return;
             socket.emit('submitVote', { roomCode, targetId: selectedVote });
-            document.getElementById('screen-vote').innerHTML = "<h2 style='text-align:center'>Waiting for results...</h2>";
+            document.getElementById('screen-vote').innerHTML = "<h2 style='text-align:center; color:var(--text-dim); margin-top:50px;'>Target Locked.<br>Waiting for consensus...</h2>";
         }
 
+        // --- RESULT ---
         socket.on('gameOver', (data) => {
             showScreen('screen-result');
             const title = document.getElementById('winner-title');
             const desc = document.getElementById('winner-desc');
+            const icon = document.getElementById('winner-icon');
             
             if(data.wasImpostor) {
-                title.innerText = "Civilians Win!";
+                title.innerText = "Civilians Win";
                 title.style.color = "var(--primary)";
-                desc.innerText = `You caught ${data.impostorName}!`;
+                desc.innerText = `The Impostor (${data.impostorName}) was eliminated.`;
+                icon.innerText = "🛡️";
             } else {
-                title.innerText = "Mr. White Wins!";
-                title.style.color = "var(--accent)";
-                desc.innerText = `${data.impostorName} was not caught!`;
+                title.innerText = "Impostor Wins";
+                title.style.color = "var(--danger)";
+                desc.innerText = `${data.impostorName} survived the vote.`;
+                icon.innerText = "🔪";
             }
 
             document.getElementById('res-imp-word').innerText = data.impWord;
             document.getElementById('res-civ-word').innerText = data.civWord;
-            
-            // Restore Vote Screen for next time
-            document.getElementById('screen-vote').innerHTML = `
-                <h2 style="text-align:center; color:var(--accent);">Vote the Impostor</h2>
-                <div id="vote-list" style="flex:1; overflow-y:auto;"></div>
-                <button class="danger" onclick="submitVote()">Eliminate Player</button>
-            `;
         });
 
         function restartGame() { socket.emit('restartGame', roomCode); }

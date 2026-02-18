@@ -10,11 +10,63 @@ app.use(express.static('public'));
 let rooms = {};
 // Expanded Word List
 const WORDS = [
-    ["Apple", "Pear"], ["Coffee", "Tea"], ["Sun", "Moon"], ["Cat", "Dog"],
-    ["Ocean", "Pool"], ["Superman", "Batman"], ["Pizza", "Burger"],
-    ["Doctor", "Nurse"], ["Gold", "Silver"], ["Chair", "Stool"],
-    ["Rain", "Snow"], ["Facebook", "Instagram"], ["Guitar", "Violin"],
-    ["McDonalds", "KFC"], ["Ferrari", "Lamborghini"], ["iPhone", "Samsung"]
+    // --- FOOD & DRINK ---
+    ["Apple", "Pear"], ["Banana", "Plantain"], ["Strawberry", "Raspberry"],
+    ["Coffee", "Tea"], ["Latte", "Cappuccino"], ["Pepsi", "Coke"],
+    ["Pizza", "Burger"], ["Taco", "Burrito"], ["Sushi", "Sashimi"],
+    ["Pancake", "Waffle"], ["Cookie", "Biscuit"], ["Donut", "Bagel"],
+    ["Soup", "Stew"], ["Butter", "Margarine"], ["Ketchup", "Mustard"],
+    ["Salt", "Pepper"], ["Rice", "Noodles"], ["Bread", "Toast"],
+    ["Chocolate", "Vanilla"], ["Ice Cream", "Yogurt"], ["Lemon", "Lime"],
+    ["Onion", "Garlic"], ["Potato", "Sweet Potato"], ["Chicken", "Turkey"],
+    ["Steak", "Pork Chop"], ["Beer", "Wine"], ["Whiskey", "Vodka"],
+
+    // --- ANIMALS ---
+    ["Cat", "Dog"], ["Lion", "Tiger"], ["Leopard", "Cheetah"],
+    ["Wolf", "Fox"], ["Crocodile", "Alligator"], ["Turtle", "Tortoise"],
+    ["Bee", "Wasp"], ["Butterfly", "Moth"], ["Eagle", "Falcon"],
+    ["Penguin", "Ostrich"], ["Dolphin", "Shark"], ["Whale", "Shark"],
+    ["Frog", "Toad"], ["Rabbit", "Hare"], ["Horse", "Donkey"],
+    ["Sheep", "Goat"], ["Monkey", "Gorilla"], ["Snake", "Worm"],
+    ["Spider", "Scorpion"], ["Ant", "Termite"], ["Duck", "Goose"],
+
+    // --- PLACES & NATURE ---
+    ["Sun", "Moon"], ["Star", "Planet"], ["Ocean", "Sea"],
+    ["River", "Lake"], ["Pool", "Pond"], ["Forest", "Jungle"],
+    ["Desert", "Beach"], ["Mountain", "Hill"], ["Rain", "Snow"],
+    ["Hurricane", "Tornado"], ["Earthquake", "Tsunami"], ["City", "Village"],
+    ["Hotel", "Motel"], ["Library", "Bookstore"], ["School", "University"],
+    ["Museum", "Gallery"], ["Cinema", "Theater"], ["Hospital", "Clinic"],
+    ["Prison", "Jail"], ["Bridge", "Tunnel"], ["Castle", "Palace"],
+
+    // --- OBJECTS & TECH ---
+    ["iPhone", "Samsung"], ["Laptop", "Tablet"], ["Keyboard", "Mouse"],
+    ["Facebook", "Instagram"], ["Twitter", "TikTok"], ["Spotify", "Apple Music"],
+    ["Netflix", "YouTube"], ["PlayStation", "Xbox"], ["Windows", "MacOS"],
+    ["Car", "Bus"], ["Motorcycle", "Bicycle"], ["Train", "Subway"],
+    ["Helicopter", "Airplane"], ["Boat", "Ship"], ["Taxi", "Uber"],
+    ["Pen", "Pencil"], ["Fork", "Spoon"], ["Cup", "Mug"],
+    ["Chair", "Stool"], ["Sofa", "Bench"], ["Bed", "Hammock"],
+    ["Door", "Gate"], ["Window", "Mirror"], ["Glasses", "Sunglasses"],
+    ["Watch", "Clock"], ["Ring", "Bracelet"], ["Shoe", "Boot"],
+    ["Hat", "Cap"], ["Pants", "Shorts"], ["Shirt", "T-shirt"],
+
+    // --- ROLES & CHARACTERS ---
+    ["Superman", "Batman"], ["Spiderman", "Iron Man"], ["Harry Potter", "Frodo"],
+    ["Vampire", "Werewolf"], ["Ghost", "Zombie"], ["Angel", "Demon"],
+    ["Santa", "Elf"], ["Pirate", "Ninja"], ["King", "Prince"],
+    ["Queen", "Princess"], ["Doctor", "Nurse"], ["Teacher", "Professor"],
+    ["Police", "Detective"], ["Lawyer", "Judge"], ["Pilot", "Captain"],
+    ["Chef", "Waiter"], ["Artist", "Designer"], ["Singer", "Dancer"],
+
+    // --- ABSTRACT & ACTIVITIES ---
+    ["Love", "Like"], ["Happy", "Excited"], ["Sad", "Depressed"],
+    ["Running", "Walking"], ["Swimming", "Diving"], ["Soccer", "Rugby"],
+    ["Tennis", "Badminton"], ["Basketball", "Volleyball"], ["Skiing", "Snowboarding"],
+    ["Painting", "Drawing"], ["Singing", "Humming"], ["Guitar", "Violin"],
+    ["Piano", "Keyboard"], ["Rock", "Pop"], ["Comedy", "Drama"],
+    ["Horror", "Thriller"], ["Math", "Science"], ["History", "Geography"],
+    ["Gold", "Silver"], ["Diamond", "Pearl"], ["Red", "Pink"]
 ];
 
 io.on('connection', (socket) => {
