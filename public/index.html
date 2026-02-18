@@ -266,14 +266,20 @@
 
         <div id="screen-lobby" class="screen hidden">
             <h3 style="text-align:center; font-weight:400; color:var(--text-dim);">Agents in Lobby</h3>
+            
             <div id="lobby-list" style="flex:1; overflow-y:auto;"></div>
             
             <div id="host-controls" class="hidden">
                 <button onclick="startGame()">Start Mission</button>
             </div>
+
             <p style="text-align:center; font-size:0.8rem; color:var(--text-dim); margin-top:20px; opacity:0.6;">
                 Waiting for host...
             </p>
+
+            <button class="secondary" onclick="leaveRoom()" style="margin-top:20px; background:rgba(255,255,255,0.1); box-shadow:none;">
+                Leave Room
+            </button>
         </div>
 
         <div id="screen-game" class="screen hidden">
@@ -454,6 +460,11 @@
 
         function restartGame() { socket.emit('restartGame', roomCode); }
         socket.on('resetLobby', () => showScreen('screen-lobby'));
+
+        function leaveRoom() {
+            socket.emit('leaveRoom');
+            location.reload();
+        }
 
     </script>
 </body>

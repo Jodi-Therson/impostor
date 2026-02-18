@@ -71,36 +71,33 @@ const WORDS = [
 ];
 
 io.on('connection', (socket) => {
-    
+
     // JOIN ROOM
     socket.on('joinRoom', ({ roomCode, name }) => {
         socket.join(roomCode);
-        
-        // SAVE ROOM CODE TO SOCKET (Important for disconnect)
-        socket.roomCode = roomCode; 
+        socket.roomCode = roomCode; // IMPORTANT: Save room code to socket
+        socket.username = name;     // IMPORTANT: Save name to socket
 
         if (!rooms[roomCode]) {
-            rooms[roomCode] = { 
-                players: [], 
-                state: 'lobby', 
-                turnIndex: 0, 
-                round: 1, 
+            rooms[roomCode] = {
+                players: [],
+                state: 'lobby',
+                turnIndex: 0,
+                round: 1,
                 votes: {},
                 chatLog: []
             };
         }
 
         const room = rooms[roomCode];
-        
-        // Prevent joining if game already started
+
+        // Prevent joining started games (optional)
         if (room.state !== 'lobby') {
-            socket.emit('error', 'Game already in progress');
+            socket.emit('error', 'Game in progress');
             return;
         }
 
-        const isHost = room.players.length === 0;
-        const player = { id: socket.id, name, role: null, word: null, isHost };
-        
+        const player = { id: socket.id, name, role: null, word: null, isHost: room.players.length === 0 };
         room.players.push(player);
 
         io.to(roomCode).emit('updateLobby', room.players);
@@ -121,7 +118,7 @@ io.on('connection', (socket) => {
 
         // Logic: Shuffle & Assign
         room.players.sort(() => Math.random() - 0.5);
-        
+
         // Ensure at least 3 players (Optional check)
         // if(room.players.length < 3) return; 
 
@@ -142,9 +139,9 @@ io.on('connection', (socket) => {
         room.round = 1;
 
         io.to(roomCode).emit('gameStarted', { players: room.players });
-        io.to(roomCode).emit('nextTurn', { 
-            playerId: room.players[0].id, 
-            round: 1 
+        io.to(roomCode).emit('nextTurn', {
+            playerId: room.players[0].id,
+            round: 1
         });
     });
 
@@ -154,7 +151,7 @@ io.on('connection', (socket) => {
         if (!room) return;
 
         const player = room.players[room.turnIndex];
-        
+
         // Send Chat
         const msg = { name: player.name, text: text };
         io.to(roomCode).emit('newChatMessage', msg);
@@ -173,9 +170,9 @@ io.on('connection', (socket) => {
             room.state = 'voting';
             io.to(roomCode).emit('startVoting');
         } else {
-            io.to(roomCode).emit('nextTurn', { 
-                playerId: room.players[room.turnIndex].id, 
-                round: room.round 
+            io.to(roomCode).emit('nextTurn', {
+                playerId: room.players[room.turnIndex].id,
+                round: room.round
             });
         }
     });
@@ -191,7 +188,7 @@ io.on('connection', (socket) => {
         if (Object.keys(room.votes).length === room.players.length) {
             const voteCounts = {};
             room.players.forEach(p => voteCounts[p.id] = 0);
-            
+
             Object.values(room.votes).forEach(target => {
                 if (voteCounts[target] !== undefined) voteCounts[target]++;
             });
@@ -223,7 +220,7 @@ io.on('connection', (socket) => {
     // RESTART
     socket.on('restartGame', (roomCode) => {
         const room = rooms[roomCode];
-        if(room) {
+        if (room) {
             room.state = 'lobby';
             room.votes = {};
             io.to(roomCode).emit('resetLobby');
@@ -232,36 +229,42 @@ io.on('connection', (socket) => {
         }
     });
 
-    // --- HANDLE DISCONNECT (THE FIX) ---
+    socket.on('leaveRoom', () => {
+        handleDisconnect(socket);
+    });
+
+    // --- UPDATED: Handle Refresh/Disconnect ---
     socket.on('disconnect', () => {
-        const roomCode = socket.roomCode; // We saved this earlier!
-
-        if (roomCode && rooms[roomCode]) {
-            const room = rooms[roomCode];
-            
-            // Remove player from the array
-            room.players = room.players.filter(p => p.id !== socket.id);
-
-            // IF ROOM IS EMPTY: DELETE IT
-            if (room.players.length === 0) {
-                delete rooms[roomCode];
-                console.log(`Room ${roomCode} deleted (empty)`);
-            } else {
-                // IF ROOM HAS PEOPLE:
-                
-                // 1. If Host left, assign new host
-                if (!room.players.some(p => p.isHost)) {
-                    room.players[0].isHost = true;
-                    io.to(room.players[0].id).emit('youJoined', { isHost: true });
-                }
-
-                // 2. Notify others that player left
-                io.to(roomCode).emit('updateLobby', room.players);
-            }
-        }
+        handleDisconnect(socket);
     });
 });
 
+function handleDisconnect(socket) {
+    const roomCode = socket.roomCode;
+
+    if (roomCode && rooms[roomCode]) {
+        const room = rooms[roomCode];
+        
+        // Remove the player with THIS socket ID
+        room.players = room.players.filter(p => p.id !== socket.id);
+
+        if (room.players.length === 0) {
+            // If room empty, delete it
+            delete rooms[roomCode];
+        } else {
+            // If Host left, assign new host
+            if (!room.players.some(p => p.isHost)) {
+                room.players[0].isHost = true;
+                // Notify the new host
+                io.to(room.players[0].id).emit('youJoined', { isHost: true }); 
+            }
+            
+            // Notify everyone else
+            io.to(roomCode).emit('updateLobby', room.players);
+        }
+    }
+}
+
 server.listen(3000, () => {
-  console.log('Server running on port 3000');
+    console.log('Server running on port 3000');
 });
