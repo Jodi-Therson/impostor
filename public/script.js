@@ -174,6 +174,42 @@ window.onload = () => {
 
 function copyInviteLink() {
     const link = `${window.location.origin}/?room=${roomCode}`;
-    navigator.clipboard.writeText(link);
-    alert("Invite link copied! Send it to your friends.");
+    
+    // Check if the modern Clipboard API is available and secure
+    if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(link).then(() => {
+            alert("Invite link copied!");
+        }).catch((err) => {
+            console.error('Failed to copy: ', err);
+            fallbackCopyTextToClipboard(link); // Try fallback if it fails
+        });
+    } else {
+        // Use the old "Hack" method for HTTP
+        fallbackCopyTextToClipboard(link);
+    }
+}
+
+function fallbackCopyTextToClipboard(text) {
+    var textArea = document.createElement("textarea");
+    textArea.value = text;
+    
+    // Ensure it's not visible but part of the DOM
+    textArea.style.top = "0";
+    textArea.style.left = "0";
+    textArea.style.position = "fixed";
+
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+
+    try {
+        var successful = document.execCommand('copy');
+        var msg = successful ? 'successful' : 'unsuccessful';
+        if(successful) alert("Invite link copied!");
+    } catch (err) {
+        console.error('Fallback: Oops, unable to copy', err);
+        alert("Could not copy link automatically. Please copy the URL manually.");
+    }
+
+    document.body.removeChild(textArea);
 }
