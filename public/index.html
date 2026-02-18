@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mr. White Online</title>
+    <style>
+        :root { --bg: #1a1a1a; --card: #2d2d2d; --blue: #3498db; --red: #e74c3c; --green: #2ecc71; }
+        body { font-family: sans-serif; background: var(--bg); color: white; margin: 0; padding: 20px; text-align: center; }
+        .container { background: var(--card); padding: 20px; border-radius: 15px; max-width: 500px; margin: 0 auto; min-height: 80vh; display: flex; flex-direction: column; }
+        
+        input { width: 80%; padding: 12px; margin: 10px 0; border-radius: 5px; border: 1px solid #555; background: #333; color: white; text-align: center; }
+        button { width: 100%; padding: 15px; margin-top: 10px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; background: var(--blue); color: white; font-size: 1rem; }
+        button:disabled { background: #555; cursor: not-allowed; }
+        
+        .hidden { display: none !important; }
+        .scroll-box { flex-grow: 1; overflow-y: auto; background: #222; margin: 15px 0; padding: 10px; border-radius: 8px; text-align: left; max-height: 400px; }
+        
+        .chat-msg { margin-bottom: 8px; padding: 8px; background: #333; border-radius: 5px; border-left: 3px solid var(--blue); }
+        .chat-name { font-weight: bold; color: #aaa; font-size: 0.8em; margin-bottom: 2px; }
+        
+        .player-item { padding: 12px; background: #333; margin: 5px 0; border-radius: 5px; cursor: pointer; border: 1px solid transparent; }
+        .player-item.selected { border: 2px solid var(--red); background: #4a2c2c; }
+        
+        #my-word { font-size: 2.5rem; color: var(--blue); font-weight: bold; margin: 20px 0; text-transform: uppercase; }
+        .turn-indicator { color: var(--green); font-weight: bold; margin-bottom: 10px; font-size: 1.2rem; }
+    </style>
+    <script src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+
+    <div id="login-screen" class="container">
+        <h1>Mr. White Online</h1>
+        <p>Enter name & room code to play</p>
+        <input type="text" id="username" placeholder="Your Name">
+        <input type="text" id="room-code" placeholder="Room Code (e.g. 1234)">
+        <button onclick="joinGame()">Join Game</button>
+    </div>
+
+    <div id="lobby-screen" class="container hidden">
+        <h2>Lobby</h2>
+        <p>Share the Room Code with friends!</p>
+        <div id="lobby-list" class="scroll-box"></div>
+        <button id="start-btn" onclick="requestStart()" class="hidden">Start Game</button>
+    </div>
+
+    <div id="game-screen" class="container hidden">
+        <div class="turn-indicator" id="turn-status">Waiting...</div>
+        <div>Your Secret Word:</div>
+        <div id="my-word">???</div>
+        
+        <div id="chat-box" class="scroll-box"></div>
+        
+        <div id="input-area" class="hidden">
+            <input type="text" id="desc-input" placeholder="Type your description...">
+            <button onclick="sendDesc()">Send</button>
+        </div>
+    </div>
+
+    <div id="vote-screen" class="container hidden">
+        <h2 style="color:var(--red)">Who is Mr. White?</h2>
+        <p>Tap a player to vote:</p>
+        <div id="vote-list" class="scroll-box"></div>
+        <button onclick="submitVote()">Confirm Vote</button>
+    </div>
+
+    <div id="result-screen" class="container hidden">
+        <h1>Game Over</h1>
+        <div id="result-msg"></div>
+        <div style="margin-top:20px; text-align:left; background:#222; padding:15px; border-radius:10px;">
+            <p>Impostor Word: <b id="res-imp" style="color:var(--red); float:right"></b></p>
+            <p>Civilian Word: <b id="res-civ" style="color:var(--blue); float:right"></b></p>
+        </div>
+        <button onclick="requestRestart()">Play Again</button>
+    </div>
+
+    <script>
+        const socket = io();
+        let roomCode = "";
+        let selectedVote = null;
+        let allPlayers = [];
+
+        // JOIN
+        function joinGame() {
+            const name = document.getElementById('username').value;
+            roomCode = document.getElementById('room-code').value;
+            if(!name || !roomCode) return alert("Enter name and code!");
+            
+            socket.emit('joinRoom', { roomCode, name });
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('lobby-screen').classList.remove('hidden');
+        }
+
+        socket.on('updateLobby', (players) => {
+            const list = document.getElementById('lobby-list');
+            list.innerHTML = players.map(p => `<div class='player-item'>${p.name}</div>`).join('');
+        });
+
+        socket.on('youJoined', (data) => {
+            if(data.isHost) document.getElementById('start-btn').classList.remove('hidden');
+        });
+
+        // START
+        function requestStart() { socket.emit('startGame', roomCode); }
+
+        socket.on('gameStarted', ({ players }) => {
+            allPlayers = players;
+            document.getElementById('lobby-screen').classList.add('hidden');
+            document.getElementById('result-screen').classList.add('hidden');
+            document.getElementById('game-screen').classList.remove('hidden');
+            document.getElementById('chat-box').innerHTML = ''; 
+
+            const me = players.find(p => p.id === socket.id);
+            document.getElementById('my-word').textContent = me.word;
+        });
+
+        // TURN
+        socket.on('nextTurn', ({ playerId, round }) => {
+            const isMyTurn = (playerId === socket.id);
+            const status = document.getElementById('turn-status');
+            const inputArea = document.getElementById('input-area');
+
+            if (isMyTurn) {
+                status.textContent = `Round ${round}: YOUR TURN!`;
+                inputArea.classList.remove('hidden');
+            } else {
+                status.textContent = `Round ${round}: Waiting for player...`;
+                inputArea.classList.add('hidden');
+            }
+        });
+
+        function sendDesc() {
+            const input = document.getElementById('desc-input');
+            const text = input.value;
+            if(!text) return;
+            socket.emit('sendDescription', { roomCode, text });
+            input.value = '';
+        }
+
+        socket.on('newChatMessage', (msg) => {
+            const box = document.getElementById('chat-box');
+            box.innerHTML += `
+                <div class="chat-msg">
+                    <div class="chat-name">${msg.name} (Round ${msg.round})</div>
+                    <div>${msg.text}</div>
+                </div>`;
+            box.scrollTop = box.scrollHeight;
+        });
+
+        // VOTE
+        socket.on('startVoting', () => {
+            document.getElementById('game-screen').classList.add('hidden');
+            document.getElementById('vote-screen').classList.remove('hidden');
+            
+            const list = document.getElementById('vote-list');
+            list.innerHTML = allPlayers.map(p => 
+                `<div class='player-item' onclick='selectVote("${p.id}", this)'>${p.name}</div>`
+            ).join('');
+        });
+
+        function selectVote(id, el) {
+            selectedVote = id;
+            document.querySelectorAll('#vote-list .player-item').forEach(d => d.classList.remove('selected'));
+            el.classList.add('selected');
+        }
+
+        function submitVote() {
+            if(!selectedVote) return alert("Select someone!");
+            socket.emit('submitVote', { roomCode, targetId: selectedVote });
+            document.getElementById('vote-screen').innerHTML = "<h2>Waiting for others...</h2>";
+        }
+
+        // RESULT
+        socket.on('gameOver', (data) => {
+            document.getElementById('vote-screen').classList.add('hidden');
+            document.getElementById('result-screen').classList.remove('hidden');
+            
+            // Reset vote screen for next time
+            document.getElementById('vote-screen').innerHTML = `<h2 style="color:var(--red)">Who is Mr. White?</h2><p>Tap a player to vote:</p><div id="vote-list" class="scroll-box"></div><button onclick="submitVote()">Confirm Vote</button>`;
+
+            const resDiv = document.getElementById('result-msg');
+            if(data.wasImpostor) {
+                resDiv.innerHTML = `<h2 style="color:var(--green)">Civilians Win!</h2><p>You caught ${data.eliminatedName}!</p>`;
+            } else {
+                resDiv.innerHTML = `<h2 style="color:var(--red)">Mr. White Wins!</h2><p>You voted out ${data.eliminatedName} (Civilian).</p>`;
+            }
+
+            document.getElementById('res-imp').textContent = `${data.impostorName} (${data.impWord})`;
+            document.getElementById('res-civ').textContent = data.civWord;
+        });
+
+        function requestRestart() {
+            socket.emit('restartGame', roomCode);
+        }
+
+        socket.on('resetLobby', () => {
+            document.getElementById('result-screen').classList.add('hidden');
+            document.getElementById('lobby-screen').classList.remove('hidden');
+        });
+    </script>
+</body>
+</html>

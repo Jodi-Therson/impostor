@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Mr. White: Fixed Version</title>
+    <style>
+        :root {
+            --bg-color: #1a1a1a;
+            --card-color: #2d2d2d;
+            --text-color: #ffffff;
+            --accent-color: #e74c3c;
+            --primary-btn: #3498db;
+            --success-color: #2ecc71;
+            --input-bg: #404040;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            text-align: center;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        h1 { margin-bottom: 5px; }
+        p { color: #aaa; margin-top: 5px; line-height: 1.5; }
+
+        .container {
+            background-color: var(--card-color);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            width: 100%;
+            max-width: 400px;
+        }
+
+        input[type="number"], input[type="text"] {
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid #555;
+            background-color: var(--input-bg);
+            color: white;
+            font-size: 1.1rem;
+            text-align: center;
+            width: 80%;
+            margin-bottom: 10px;
+        }
+
+        #names-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        button {
+            background-color: var(--primary-btn);
+            color: white;
+            border: none;
+            padding: 15px;
+            font-size: 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            width: 100%;
+            font-weight: bold;
+            margin-top: 10px;
+            touch-action: manipulation;
+        }
+        button:active { transform: scale(0.98); opacity: 0.9; }
+        button.reveal-btn { background-color: var(--accent-color); }
+        button.secondary { background-color: #555; margin-top: 10px; }
+        button.action-btn { background-color: var(--success-color); }
+
+        .hidden { display: none !important; }
+        
+        .big-text {
+            font-size: 2.2rem;
+            font-weight: 800;
+            color: var(--primary-btn);
+            margin: 20px 0;
+            text-transform: uppercase;
+        }
+
+        .name-display {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #fff;
+            margin-bottom: 10px;
+        }
+
+        .role-hint { font-size: 0.9rem; color: #888; }
+        
+        /* Round Indicator */
+        .round-badge {
+            background: #444;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            margin-bottom: 15px;
+            display: inline-block;
+        }
+
+        .word-reveal-box {
+            background: rgba(0,0,0,0.2);
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            text-align: left;
+        }
+        .word-reveal-box div { margin: 5px 0; border-bottom: 1px solid #444; padding-bottom: 5px; }
+        .word-reveal-box div:last-child { border: none; }
+        .label { color: #888; font-size: 0.8rem; text-transform: uppercase; }
+        .val { font-weight: bold; font-size: 1.1rem; float: right; }
+
+    </style>
+</head>
+<body>
+
+    <div id="setup-screen" class="container">
+        <h1>Mr. White</h1>
+        <p>Step 1: How many players?</p>
+        <input type="number" id="player-count" value="4" min="3" max="20">
+        <button onclick="goToNames()">Next</button>
+    </div>
+
+    <div id="names-screen" class="container hidden">
+        <h1>Who is playing?</h1>
+        <p>Enter names in passing order:</p>
+        <div id="names-container"></div>
+        <button onclick="startGame()">Start Game</button>
+        <button class="secondary" onclick="location.reload()">Back</button>
+    </div>
+
+    <div id="pass-screen" class="container hidden">
+        <div class="round-badge" id="round-number-pass">Round 1</div>
+        <div class="role-hint">Pass the device to:</div>
+        <div class="name-display" id="pass-player-name">Name</div>
+        <p>Make sure no one else is looking!</p>
+        <button class="reveal-btn" onclick="revealWord()">Tap to Reveal Word</button>
+    </div>
+
+    <div id="reveal-screen" class="container hidden">
+        <div class="round-badge" id="round-number-reveal">Round 1</div>
+        <div class="role-hint">Memorize your word:</div>
+        <div class="big-text" id="secret-word-display">???</div>
+        <p>Tap below to hide and pass.</p>
+        <button onclick="nextPlayer()">Got it!</button>
+    </div>
+
+    <div id="round-screen" class="container hidden">
+        <div class="round-badge" id="round-number-game">Round 1</div>
+        <h1>Game On!</h1>
+        <hr style="border: 0; border-top: 1px solid #444; margin: 20px 0;">
+        
+        <div class="role-hint">The player starting is:</div>
+        <div class="name-display" style="color:var(--success-color);" id="starter-name">???</div>
+        
+        <p style="margin-top: 20px;">Discuss, vote, and eliminate!</p>
+        <button class="reveal-btn" onclick="showResults()">Who is the Impostor?</button>
+    </div>
+
+    <div id="results-screen" class="container hidden">
+        <h1>The Truth</h1>
+        
+        <p>The Impostor (Mr. White) was:</p>
+        <div class="name-display" style="color:var(--accent-color)" id="impostor-name">???</div>
+
+        <div class="word-reveal-box">
+            <div>
+                <span class="label">Civilian Word</span>
+                <span class="val" id="civ-word-result" style="color:var(--primary-btn)">-</span>
+            </div>
+            <div>
+                <span class="label">Impostor Word</span>
+                <span class="val" id="imp-word-result" style="color:var(--accent-color)">-</span>
+            </div>
+        </div>
+
+        <button class="action-btn" onclick="restartSamePlayers()">Play Again (Same Players)</button>
+        <button class="secondary" onclick="location.reload()">New Group</button>
+    </div>
+
+    <script>
+        // WORD DATABASE
+        const wordPairs = [
+            ["Apple", "Pear"], ["Coffee", "Tea"], ["Sun", "Moon"], 
+            ["Cat", "Dog"], ["Guitar", "Violin"], ["Car", "Bus"],
+            ["Ocean", "Pool"], ["Bread", "Toast"], ["Pen", "Pencil"],
+            ["Soccer", "Basketball"], ["Laptop", "Tablet"], ["Chair", "Stool"],
+            ["Hotel", "Motel"], ["River", "Lake"], ["Gold", "Silver"],
+            ["Superman", "Batman"], ["Facebook", "Instagram"], ["Pizza", "Burger"],
+            ["Rain", "Snow"], ["Doctor", "Nurse"], ["Ketchup", "Mustard"],
+            ["Wine", "Beer"], ["Movie", "TV Show"], ["Running", "Walking"],
+            ["Pancake", "Waffle"], ["Sword", "Knife"], ["King", "Prince"]
+        ];
+
+        let players = []; 
+        let currentPlayerIndex = 0;
+        let currentCivilianWord = "";
+        let currentImpostorWord = "";
+        let roundCounter = 0;
+
+        // --- NAVIGATION ---
+        function switchScreen(hideId, showId) {
+            document.getElementById(hideId).classList.add('hidden');
+            document.getElementById(showId).classList.remove('hidden');
+        }
+
+        function goToNames() {
+            const count = document.getElementById('player-count').value;
+            const container = document.getElementById('names-container');
+            container.innerHTML = ''; 
+
+            for (let i = 0; i < count; i++) {
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.placeholder = `Player ${i + 1} Name`;
+                input.id = `name-input-${i}`;
+                container.appendChild(input);
+            }
+            switchScreen('setup-screen', 'names-screen');
+        }
+
+        // --- GAME LOGIC ---
+
+        function startGame() {
+            const count = document.getElementById('player-count').value;
+            let tempNames = [];
+            for (let i = 0; i < count; i++) {
+                let val = document.getElementById(`name-input-${i}`).value;
+                if (!val.trim()) val = `Player ${i+1}`;
+                tempNames.push(val);
+            }
+            
+            // Start fresh round
+            roundCounter = 0;
+            setupRound(tempNames);
+        }
+
+        function restartSamePlayers() {
+            // Extract JUST the names as strings to ensure a clean slate
+            const namesOnly = players.map(p => p.name);
+            setupRound(namesOnly);
+        }
+
+        function setupRound(namesArray) {
+            roundCounter++;
+            updateRoundDisplay();
+
+            // 1. Pick New Words
+            const pair = wordPairs[Math.floor(Math.random() * wordPairs.length)];
+            const flip = Math.random() < 0.5;
+            
+            currentCivilianWord = flip ? pair[0] : pair[1];
+            currentImpostorWord = flip ? pair[1] : pair[0];
+
+            // 2. Create Roles Array (1 Impostor, rest Civilian)
+            let roles = [];
+            roles.push("Mr. White");
+            for (let i = 0; i < namesArray.length - 1; i++) {
+                roles.push("Civilian");
+            }
+
+            // 3. Shuffle Roles (Using Fisher-Yates)
+            roles = shuffleArray(roles);
+
+            // 4. Create NEW Player Objects
+            // We map the passed namesArray to the shuffled roles
+            players = namesArray.map((name, index) => {
+                return {
+                    name: name,
+                    role: roles[index],
+                    word: (roles[index] === "Mr. White") ? currentImpostorWord : currentCivilianWord
+                };
+            });
+
+            // 5. Reset UI
+            currentPlayerIndex = 0;
+            updatePassScreen();
+            
+            // Hide all potential open screens
+            ['setup-screen', 'names-screen', 'results-screen', 'round-screen'].forEach(id => {
+                document.getElementById(id).classList.add('hidden');
+            });
+            
+            document.getElementById('pass-screen').classList.remove('hidden');
+        }
+
+        function revealWord() {
+            const p = players[currentPlayerIndex];
+            document.getElementById('secret-word-display').textContent = p.word;
+            switchScreen('pass-screen', 'reveal-screen');
+        }
+
+        function nextPlayer() {
+            currentPlayerIndex++;
+            if (currentPlayerIndex < players.length) {
+                updatePassScreen();
+                switchScreen('reveal-screen', 'pass-screen');
+            } else {
+                finalizeRoundSetup();
+            }
+        }
+
+        function updatePassScreen() {
+            document.getElementById('pass-player-name').textContent = players[currentPlayerIndex].name;
+        }
+
+        function finalizeRoundSetup() {
+            const randomStarter = players[Math.floor(Math.random() * players.length)];
+            document.getElementById('starter-name').textContent = randomStarter.name;
+            switchScreen('reveal-screen', 'round-screen');
+        }
+
+        function showResults() {
+            const impostor = players.find(p => p.role === "Mr. White");
+            document.getElementById('impostor-name').textContent = impostor.name;
+            document.getElementById('civ-word-result').textContent = currentCivilianWord;
+            document.getElementById('imp-word-result').textContent = currentImpostorWord;
+            switchScreen('round-screen', 'results-screen');
+        }
+
+        function updateRoundDisplay() {
+            const text = `Round ${roundCounter}`;
+            document.getElementById('round-number-pass').textContent = text;
+            document.getElementById('round-number-reveal').textContent = text;
+            document.getElementById('round-number-game').textContent = text;
+        }
+
+        // IMPROVED SHUFFLE (Fisher-Yates)
+        function shuffleArray(array) {
+            let currentIndex = array.length, randomIndex;
+            // While there remain elements to shuffle.
+            while (currentIndex != 0) {
+                // Pick a remaining element.
+                randomIndex = Math.floor(Math.random() * currentIndex);
+                currentIndex--;
+                // And swap it with the current element.
+                [array[currentIndex], array[randomIndex]] = [
+                array[randomIndex], array[currentIndex]];
+            }
+            return array;
+        }
+    </script>
+</body>
+</html>
