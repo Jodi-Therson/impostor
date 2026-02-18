@@ -167,8 +167,16 @@ socket.on('gameOver', (data) => {
     document.getElementById('res-civ-word').innerText = data.civWord;
 });
 
-function restartGame() { 
-    socket.emit('restartGame', roomCode); 
+function restartGame() {  
+    // Safety check: make sure roomCode exists
+    if (!roomCode) {
+        alert("Error: No room code found. Please reload.");
+        location.reload();
+        return;
+    }
+
+    // Emit event to server
+    socket.emit('restartGame', roomCode);
 }
 
 socket.on('resetLobby', () => {

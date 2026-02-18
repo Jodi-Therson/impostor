@@ -126,6 +126,8 @@ button {
     box-shadow: 0 4px 15px var(--primary-glow);
     transition: transform 0.2s, box-shadow 0.2s;
     font-family: 'Outfit', sans-serif;
+    position: relative;
+    z-index: 100;
 }
 
 button:active {
