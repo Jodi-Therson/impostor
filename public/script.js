@@ -120,8 +120,13 @@ socket.on('startVoting', () => {
 });
 
 function selectVote(id, el) {
+    // Save the ID of the person we want to kill
     selectedVote = id;
+    
+    // Visual: Remove 'selected' class from all other items
     document.querySelectorAll('.list-item').forEach(e => e.classList.remove('selected'));
+    
+    // Visual: Add 'selected' class to the clicked item
     el.classList.add('selected');
 }
 
@@ -169,15 +174,22 @@ function restartGame() {
 socket.on('resetLobby', () => {
     // 1. Stop the countdown if it's running
     if (countdownInterval) clearInterval(countdownInterval);
-
+    
     // 2. Hide the countdown text
-    document.getElementById('wait-msg').classList.add('hidden');
-    document.getElementById('wait-msg').innerHTML = ''; // Clear text
+    const waitMsg = document.getElementById('wait-msg');
+    waitMsg.classList.add('hidden');
+    waitMsg.innerHTML = ''; 
+    
+    // 3. CRITICAL: Reset Vote Variables
+    selectedVote = null; 
+    
+    // 4. Clear the Vote List Visuals (Just to be safe)
+    document.getElementById('vote-list').innerHTML = '';
+    
+    // 5. Reset the "Game Result" screen (Hide it)
+    document.getElementById('screen-result').classList.add('hidden');
 
-    // 3. Reset Vote Selection
-    selectedVote = null;
-    document.querySelectorAll('.list-item').forEach(e => e.classList.remove('selected'));
-
+    // 6. Show Lobby
     showScreen('screen-lobby');
 });
 
