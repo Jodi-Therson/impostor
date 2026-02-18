@@ -282,3 +282,10 @@ button.secondary {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
 }
+
+#screen-result button {
+    position: relative;
+    z-index: 9999 !important; /* Forces it to be the top layer */
+    cursor: pointer;
+    margin-top: auto; /* Pushes it to the bottom if there's space */
+}

@@ -167,17 +167,25 @@ socket.on('gameOver', (data) => {
     document.getElementById('res-civ-word').innerText = data.civWord;
 });
 
-function restartGame() {  
+// Explicitly attach to window to ensure HTML can see it
+window.restartGame = function() {
+    console.log("Replay button clicked!"); // Debug log
+    
     // Safety check: make sure roomCode exists
     if (!roomCode) {
-        alert("Error: No room code found. Please reload.");
+        console.error("No room code found");
+        alert("Error: Room code lost. Reloading...");
         location.reload();
         return;
     }
 
+    // Visual feedback (optional)
+    const btn = document.querySelector('#screen-result button');
+    if(btn) btn.innerText = "Restarting...";
+
     // Emit event to server
     socket.emit('restartGame', roomCode);
-}
+};
 
 socket.on('resetLobby', () => {
     // 1. Stop the countdown if it's running
