@@ -17,8 +17,13 @@ function updateStatus(text) {
 function joinGame() {
     const name = document.getElementById('username').value;
     roomCode = document.getElementById('room-code').value;
+    
     if(!name || !roomCode) return alert("Codename and Mission Code required.");
     
+    // SAVE TO SESSION STORAGE (So it remembers you after reload)
+    sessionStorage.setItem('mrwhite_name', name);
+    sessionStorage.setItem('mrwhite_room', roomCode);
+
     socket.emit('joinRoom', { roomCode, name });
     updateStatus(`Code: ${roomCode}`);
     showScreen('screen-lobby');
@@ -110,6 +115,19 @@ socket.on('newChatMessage', ({ name, text }) => {
 // --- VOTING ---
 socket.on('startVoting', () => {
     showScreen('screen-vote');
+    
+    // RESET UI: Show list and button again
+    document.getElementById('vote-list').classList.remove('hidden');
+    document.getElementById('vote-btn').classList.remove('hidden');
+    
+    // RESET MESSAGE
+    const status = document.getElementById('vote-status');
+    status.innerHTML = "Tap an agent to cast your vote.";
+    status.style.color = "var(--text-dim)";
+    status.style.fontSize = "0.9rem";
+    status.style.marginTop = "0";
+
+    // Populate List
     const list = document.getElementById('vote-list');
     list.innerHTML = globalPlayers.map(p => `
         <div class="list-item clickable" onclick="selectVote('${p.id}', this)">
@@ -133,7 +151,18 @@ function selectVote(id, el) {
 function submitVote() {
     if(!selectedVote) return;
     socket.emit('submitVote', { roomCode, targetId: selectedVote });
-    document.getElementById('screen-vote').innerHTML = "<h2 style='text-align:center; color:var(--text-dim); margin-top:50px;'>Target Locked.<br>Waiting for consensus...</h2>";
+    
+    // HIDE the list and button, SHOW the message
+    // Instead of deleting HTML, we just hide elements
+    document.getElementById('vote-list').classList.add('hidden');
+    document.getElementById('vote-btn').classList.add('hidden');
+    
+    // Update the status text
+    const status = document.getElementById('vote-status');
+    status.innerHTML = "Target Locked.<br>Waiting for consensus...";
+    status.style.color = "var(--primary)";
+    status.style.fontSize = "1.2rem";
+    status.style.marginTop = "50px";
 }
 
 // --- RESULT ---
@@ -215,10 +244,21 @@ function leaveRoom() {
 }
 
 window.onload = () => {
+    // 1. Check URL params (Invite Links)
     const urlParams = new URLSearchParams(window.location.search);
     const roomParam = urlParams.get('room');
+    
+    // 2. Check Session Storage (Reloaded Game)
+    const savedName = sessionStorage.getItem('mrwhite_name');
+    const savedRoom = sessionStorage.getItem('mrwhite_room');
+
+    // Auto-fill inputs
+    if (savedName) document.getElementById('username').value = savedName;
+    
     if (roomParam) {
         document.getElementById('room-code').value = roomParam;
+    } else if (savedRoom) {
+        document.getElementById('room-code').value = savedRoom;
     }
 };
 
@@ -247,4 +287,9 @@ socket.on('votingCountdown', (seconds) => {
 socket.on('error', (message) => {
     alert(message);
     location.reload(); // Force reload to fix "Zombie" state
+});
+
+socket.on('forceReload', () => {
+    // Reload the page instantly
+    location.reload();
 });

@@ -261,6 +261,7 @@ io.on('connection', (socket) => {
         
         io.to(roomCode).emit('resetLobby');
         io.to(roomCode).emit('updateLobby', room.players);
+        io.to(roomCode).emit('forceReload');
     });
 
     socket.on('leaveRoom', () => {

@@ -72,10 +72,14 @@
         <div id="screen-vote" class="screen hidden">
             <div style="text-align:center; margin-bottom:20px;">
                 <h2 style="color:var(--danger); margin:0;">Identify the Impostor</h2>
-                <p style="color:var(--text-dim); font-size:0.9rem;">Tap an agent to cast your vote.</p>
+                <p id="vote-status" style="color:var(--text-dim); font-size:0.9rem;">
+                    Tap an agent to cast your vote.
+                </p>
             </div>
+
             <div id="vote-list" style="flex:1; overflow-y:auto;"></div>
-            <button class="danger" onclick="submitVote()">Eliminate Agent</button>
+
+            <button id="vote-btn" class="danger" onclick="submitVote()">Eliminate Agent</button>
         </div>
 
         <div id="screen-result" class="screen hidden">
