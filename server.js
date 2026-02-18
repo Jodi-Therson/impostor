@@ -173,17 +173,42 @@ io.on('connection', (socket) => {
 
         // End of Game Logic (After 2 rounds)
         if (room.round > 2) {
+            // Send countdown to UI
             io.to(roomCode).emit('votingCountdown', 5);
 
-            // CLEAR EXISTING TURN TIMER (Important!)
+            // Clear turn timer
             if (turnTimers[roomCode]) clearTimeout(turnTimers[roomCode]);
 
-            // SAVE VOTING TIMER ID
+            // Clear old voting timer
             if (votingTimers[roomCode]) clearTimeout(votingTimers[roomCode]);
 
-            votingTimers[roomCode] = setTimeout(() => {
-                room.state = 'voting';
+            // START VOTING after 5 seconds
+            setTimeout(() => {
+                const r = rooms[roomCode]; // Fetch room again to be safe
+                if(!r) return;
+
+                r.state = 'voting';
                 io.to(roomCode).emit('startVoting');
+
+                // --- NEW: SAFETY FORCE END TIMER (60 Seconds) ---
+                votingTimers[roomCode] = setTimeout(() => {
+                    console.log(`[${roomCode}] Force ending voting phase due to timeout.`);
+                    // Manually trigger the vote check logic even if votes are missing
+                    // Ideally we'd trigger a specific "Time's Up" function, 
+                    // but for now let's just force a tie or random end.
+                    // Easiest way: Do nothing, let them restart? 
+                    // Better way: Just reset the lobby so they aren't stuck.
+                    io.to(roomCode).emit('gameOver', {
+                         impostorName: "Unknown",
+                         civWord: r.civWord,
+                         impWord: r.impWord,
+                         eliminatedName: "Time Limit Reached",
+                         wasImpostor: false,
+                         resultType: "tie"
+                    });
+                }, 60000); // 60 Seconds Max for Voting
+                // ------------------------------------------------
+
             }, 5000);
         } else {
             // Normal turn
@@ -199,57 +224,62 @@ io.on('connection', (socket) => {
         const room = rooms[roomCode];
         if (!room) return;
 
+        // Record the vote
         room.votes[socket.id] = targetId;
 
-        // Check if everyone voted
-        if (Object.keys(room.votes).length === room.players.length) {
-            const voteCounts = {};
-            room.players.forEach(p => voteCounts[p.id] = 0);
+        // DEBUG LOG: See exactly what the server is thinking
+        const voteCount = Object.keys(room.votes).length;
+        const playerCount = room.players.length;
+        console.log(`[${roomCode}] Vote status: ${voteCount} / ${playerCount}`);
 
+        // Check if everyone voted
+        if (voteCount >= playerCount) { // Changed === to >= just to be safe
+            
+            // TALLY VOTES
+            const voteCounts = {};
+            
+            // Initialize counts for all current players
+            room.players.forEach(p => voteCounts[p.id] = 0);
+            
+            // Count valid votes only
             Object.values(room.votes).forEach(target => {
-                if (voteCounts[target] !== undefined) voteCounts[target]++;
+                if (voteCounts[target] !== undefined) {
+                    voteCounts[target]++;
+                }
             });
 
-            // Find Loser
+            // 1. Calculate Winner/Loser
             let maxVotes = -1;
-            let candidates = []; // Array to hold everyone with the highest votes
+            let candidates = [];
 
             for (const [pid, count] of Object.entries(voteCounts)) {
                 if (count > maxVotes) {
-                    // New highest vote found
                     maxVotes = count;
-                    candidates = [pid];
+                    candidates = [pid]; 
                 } else if (count === maxVotes) {
-                    // Tie found! Add to candidates
-                    candidates.push(pid);
+                    candidates.push(pid); // Tie
                 }
             }
 
-            // 2. Check for Tie
+            // 2. Determine Result Type
             let eliminatedId = null;
-            let resultType = ""; // To tell client what happened
+            let resultType = "elimination";
 
             if (candidates.length > 1) {
-                // TIE DETECTED -> IMPOSTOR WINS
-                eliminatedId = null; // No one eliminated
-                resultType = "tie";
+                resultType = "tie"; // Tie = Impostor wins
             } else {
-                // SINGLE LOSER
                 eliminatedId = candidates[0];
-                resultType = "elimination";
             }
 
-            // 3. Determine Game Over State
+            // 3. Game Logic
             const impostor = room.players.find(p => p.id === room.impostorId);
-            let eliminated = eliminatedId ? room.players.find(p => p.id === eliminatedId) : null;
-
+            const eliminated = room.players.find(p => p.id === eliminatedId);
+            
             let civsWin = false;
             if (resultType === "tie") {
                 civsWin = false;
             } else if (eliminatedId === room.impostorId) {
                 civsWin = true;
-            } else {
-                civsWin = false;
             }
 
             // 4. Send Results
@@ -261,6 +291,9 @@ io.on('connection', (socket) => {
                 wasImpostor: civsWin,
                 resultType: resultType
             });
+            
+            // Stop the safety timer since game is over
+            if (votingTimers[roomCode]) clearTimeout(votingTimers[roomCode]);
         }
     });
 
@@ -268,24 +301,17 @@ io.on('connection', (socket) => {
     socket.on('restartGame', (roomCode) => {
         const room = rooms[roomCode];
         if (room) {
-            // 1. STOP ALL TIMERS
+            // CLEAR TIMERS (Crucial for replay bug)
             if (turnTimers[roomCode]) clearTimeout(turnTimers[roomCode]);
             if (votingTimers[roomCode]) clearTimeout(votingTimers[roomCode]);
 
-            // 2. RESET GAME STATE COMPLETELY
             room.state = 'lobby';
-            room.votes = {};       // Clear old votes
-            room.turnIndex = 0;    // Reset turn
-            room.round = 1;        // Reset round
-            room.chatLog = [];     // Clear chat (optional)
-
-            // 3. Reset Player Roles (Optional but safer)
-            room.players.forEach(p => {
-                p.role = null;
-                p.word = null;
-            });
-
+            room.votes = {};       // Clear votes
+            room.turnIndex = 0;
+            room.round = 1;
+            
             io.to(roomCode).emit('resetLobby');
+            // Force update lobby so everyone sees the correct player list
             io.to(roomCode).emit('updateLobby', room.players);
         }
     });
