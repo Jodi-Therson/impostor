@@ -242,3 +242,9 @@ socket.on('votingCountdown', (seconds) => {
         }
     }, 1000);
 });
+
+// --- ERROR HANDLER ---
+socket.on('error', (message) => {
+    alert(message);
+    location.reload(); // Force reload to fix "Zombie" state
+});

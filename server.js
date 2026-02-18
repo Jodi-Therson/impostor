@@ -236,18 +236,31 @@ io.on('connection', (socket) => {
     // RESTART
     socket.on('restartGame', (roomCode) => {
         const room = rooms[roomCode];
-        if (room) {
-            if (turnTimers[roomCode]) clearTimeout(turnTimers[roomCode]);
-            if (votingTimers[roomCode]) clearTimeout(votingTimers[roomCode]);
-
-            room.state = 'lobby';
-            room.votes = {};
-            room.turnIndex = 0;
-            room.round = 1;
-            
-            io.to(roomCode).emit('resetLobby');
-            io.to(roomCode).emit('updateLobby', room.players);
+        
+        // CHECK IF ROOM EXISTS
+        if (!room) {
+            console.log(`[Server] Error: Room ${roomCode} not found (Might have been deleted).`);
+            // Tell the specific player who clicked that the room is gone
+            socket.emit('error', 'Room expired. Please reload.');
+            return;
         }
+
+        if (turnTimers[roomCode]) clearTimeout(turnTimers[roomCode]);
+        if (votingTimers[roomCode]) clearTimeout(votingTimers[roomCode]);
+
+        room.state = 'lobby';
+        room.votes = {};       
+        room.turnIndex = 0;
+        room.round = 1;
+        
+        // Reset player roles to ensure a clean slate
+        room.players.forEach(p => {
+            p.role = null;
+            p.word = null;
+        });
+        
+        io.to(roomCode).emit('resetLobby');
+        io.to(roomCode).emit('updateLobby', room.players);
     });
 
     socket.on('leaveRoom', () => {
