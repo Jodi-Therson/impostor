@@ -171,3 +171,22 @@ window.onload = () => {
         document.getElementById('room-code').value = roomParam;
     }
 };
+
+socket.on('votingCountdown', (seconds) => {
+    const waitMsg = document.getElementById('wait-msg');
+    waitMsg.classList.remove('hidden');
+    document.getElementById('input-area').classList.add('hidden'); // Hide input for the last player
+    
+    // Simple visual countdown
+    let count = seconds;
+    waitMsg.innerHTML = `Voting begins in <b>${count}</b>...`;
+    
+    const interval = setInterval(() => {
+        count--;
+        if (count <= 0) {
+            clearInterval(interval);
+        } else {
+            waitMsg.innerHTML = `Voting begins in <b>${count}</b>...`;
+        }
+    }, 1000);
+});

@@ -172,9 +172,16 @@ io.on('connection', (socket) => {
 
         // End of Game Logic (After 2 rounds)
         if (room.round > 2) {
-            room.state = 'voting';
-            io.to(roomCode).emit('startVoting');
+            // NEW: Send a countdown event first
+            io.to(roomCode).emit('votingCountdown', 5);
+
+            // Wait 5 seconds, THEN start voting
+            setTimeout(() => {
+                room.state = 'voting';
+                io.to(roomCode).emit('startVoting');
+            }, 5000);
         } else {
+            // Normal turn
             io.to(roomCode).emit('nextTurn', {
                 playerId: room.players[room.turnIndex].id,
                 round: room.round
@@ -249,7 +256,7 @@ function handleDisconnect(socket) {
 
     if (roomCode && rooms[roomCode]) {
         const room = rooms[roomCode];
-        
+
         // Remove the player with THIS socket ID
         room.players = room.players.filter(p => p.id !== socket.id);
 
@@ -261,9 +268,9 @@ function handleDisconnect(socket) {
             if (!room.players.some(p => p.isHost)) {
                 room.players[0].isHost = true;
                 // Notify the new host
-                io.to(room.players[0].id).emit('youJoined', { isHost: true }); 
+                io.to(room.players[0].id).emit('youJoined', { isHost: true });
             }
-            
+
             // Notify everyone else
             io.to(roomCode).emit('updateLobby', room.players);
         }
@@ -282,7 +289,7 @@ function startTurnTimer(roomCode) {
         // TIME IS UP! Force a message.
         const player = room.players[room.turnIndex];
         const forcedMsg = "[TIMEOUT 😴]";
-        
+
         io.to(roomCode).emit('newChatMessage', { name: player.name, text: forcedMsg });
 
         // Advance turn automatically
@@ -299,10 +306,10 @@ function startTurnTimer(roomCode) {
             io.to(roomCode).emit('startVoting');
         } else {
             // Recursively start timer for next player
-            startTurnTimer(roomCode); 
-            io.to(roomCode).emit('nextTurn', { 
-                playerId: room.players[room.turnIndex].id, 
-                round: room.round 
+            startTurnTimer(roomCode);
+            io.to(roomCode).emit('nextTurn', {
+                playerId: room.players[room.turnIndex].id,
+                round: room.round
             });
         }
     }, 30000); // 30 Seconds
