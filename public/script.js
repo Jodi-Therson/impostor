@@ -1,6 +1,7 @@
 const socket = io();
 let myId, roomCode, selectedVote;
 let globalPlayers = []; 
+let countdownInterval;
 
 // --- DOM HELPERS ---
 function showScreen(id) {
@@ -165,7 +166,20 @@ function restartGame() {
     socket.emit('restartGame', roomCode); 
 }
 
-socket.on('resetLobby', () => showScreen('screen-lobby'));
+socket.on('resetLobby', () => {
+    // 1. Stop the countdown if it's running
+    if (countdownInterval) clearInterval(countdownInterval);
+
+    // 2. Hide the countdown text
+    document.getElementById('wait-msg').classList.add('hidden');
+    document.getElementById('wait-msg').innerHTML = ''; // Clear text
+
+    // 3. Reset Vote Selection
+    selectedVote = null;
+    document.querySelectorAll('.list-item').forEach(e => e.classList.remove('selected'));
+
+    showScreen('screen-lobby');
+});
 
 function leaveRoom() {
     socket.emit('leaveRoom');
@@ -183,16 +197,18 @@ window.onload = () => {
 socket.on('votingCountdown', (seconds) => {
     const waitMsg = document.getElementById('wait-msg');
     waitMsg.classList.remove('hidden');
-    document.getElementById('input-area').classList.add('hidden'); // Hide input for the last player
-    
-    // Simple visual countdown
+    document.getElementById('input-area').classList.add('hidden');
+
     let count = seconds;
     waitMsg.innerHTML = `Voting begins in <b>${count}</b>...`;
-    
-    const interval = setInterval(() => {
+
+    // Clear any existing timer just in case
+    if (countdownInterval) clearInterval(countdownInterval);
+
+    countdownInterval = setInterval(() => {
         count--;
         if (count <= 0) {
-            clearInterval(interval);
+            clearInterval(countdownInterval); 
         } else {
             waitMsg.innerHTML = `Voting begins in <b>${count}</b>...`;
         }

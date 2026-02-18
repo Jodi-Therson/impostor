@@ -9,6 +9,7 @@ app.use(express.static('public'));
 
 let rooms = {};
 let turnTimers = {};
+let votingTimers = {};
 
 // Expanded Word List
 const WORDS = [
@@ -172,11 +173,15 @@ io.on('connection', (socket) => {
 
         // End of Game Logic (After 2 rounds)
         if (room.round > 2) {
-            // NEW: Send a countdown event first
             io.to(roomCode).emit('votingCountdown', 5);
 
-            // Wait 5 seconds, THEN start voting
-            setTimeout(() => {
+            // CLEAR EXISTING TURN TIMER (Important!)
+            if (turnTimers[roomCode]) clearTimeout(turnTimers[roomCode]);
+
+            // SAVE VOTING TIMER ID
+            if (votingTimers[roomCode]) clearTimeout(votingTimers[roomCode]);
+
+            votingTimers[roomCode] = setTimeout(() => {
                 room.state = 'voting';
                 io.to(roomCode).emit('startVoting');
             }, 5000);
@@ -213,7 +218,7 @@ io.on('connection', (socket) => {
                 if (count > maxVotes) {
                     // New highest vote found
                     maxVotes = count;
-                    candidates = [pid]; 
+                    candidates = [pid];
                 } else if (count === maxVotes) {
                     // Tie found! Add to candidates
                     candidates.push(pid);
@@ -237,7 +242,7 @@ io.on('connection', (socket) => {
             // 3. Determine Game Over State
             const impostor = room.players.find(p => p.id === room.impostorId);
             let eliminated = eliminatedId ? room.players.find(p => p.id === eliminatedId) : null;
-            
+
             let civsWin = false;
             if (resultType === "tie") {
                 civsWin = false;
@@ -253,8 +258,8 @@ io.on('connection', (socket) => {
                 civWord: room.civWord,
                 impWord: room.impWord,
                 eliminatedName: eliminated ? eliminated.name : "No one (Tie)",
-                wasImpostor: civsWin, 
-                resultType: resultType 
+                wasImpostor: civsWin,
+                resultType: resultType
             });
         }
     });
@@ -263,10 +268,24 @@ io.on('connection', (socket) => {
     socket.on('restartGame', (roomCode) => {
         const room = rooms[roomCode];
         if (room) {
+            // 1. STOP ALL TIMERS
+            if (turnTimers[roomCode]) clearTimeout(turnTimers[roomCode]);
+            if (votingTimers[roomCode]) clearTimeout(votingTimers[roomCode]);
+
+            // 2. RESET GAME STATE COMPLETELY
             room.state = 'lobby';
-            room.votes = {};
+            room.votes = {};       // Clear old votes
+            room.turnIndex = 0;    // Reset turn
+            room.round = 1;        // Reset round
+            room.chatLog = [];     // Clear chat (optional)
+
+            // 3. Reset Player Roles (Optional but safer)
+            room.players.forEach(p => {
+                p.role = null;
+                p.word = null;
+            });
+
             io.to(roomCode).emit('resetLobby');
-            // Re-send lobby data so clients refresh properly
             io.to(roomCode).emit('updateLobby', room.players);
         }
     });
