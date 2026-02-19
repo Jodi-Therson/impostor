@@ -26,8 +26,8 @@
                     <div style="font-size:3rem; margin-bottom:10px;">🕵️</div>
                     <p style="color:var(--text-dim);">Enter your identity to join the mission.</p>
                 </div>
-                <input type="text" id="username" placeholder="Codename (Name)">
-                <input type="number" id="room-code" placeholder="Mission Code (Room)">
+                <input type="text" id="username" placeholder="Codename (Name)" autocomplete="off" maxlength="20">
+                <input type="number" id="room-code" placeholder="Mission Code (Room)" autocomplete="off" maxlength="20">
                 <button onclick="joinGame()">Initialize Link</button>
             </div>
         </div>

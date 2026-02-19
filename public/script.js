@@ -293,3 +293,11 @@ socket.on('forceReload', () => {
     // Reload the page instantly
     location.reload();
 });
+
+// --- ENTER KEY LISTENERS ---
+document.addEventListener('DOMContentLoaded', () => {
+    // Send Description with Enter
+    document.getElementById('desc-input').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') sendDesc();
+    });
+});

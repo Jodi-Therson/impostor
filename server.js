@@ -68,6 +68,11 @@ io.on('connection', (socket) => {
         socket.join(roomCode);
         socket.roomCode = roomCode;
         socket.username = name;
+        const safeName = name.substring(0, 20); 
+        
+        socket.join(roomCode);
+        socket.roomCode = roomCode;
+        socket.username = safeName;
 
         if (!rooms[roomCode]) {
             rooms[roomCode] = {
@@ -87,7 +92,7 @@ io.on('connection', (socket) => {
             return;
         }
 
-        const player = { id: socket.id, name, role: null, word: null, isHost: room.players.length === 0 };
+        const player = { id: socket.id, name: safeName, role: null, word: null, isHost: room.players.length === 0 };
         room.players.push(player);
 
         io.to(roomCode).emit('updateLobby', room.players);
@@ -139,13 +144,15 @@ io.on('connection', (socket) => {
         const room = rooms[roomCode];
         if (!room) return;
 
-        if (text.trim().split(/\s+/).length > 2) {
+        let safeText = text.substring(0, 20);
+
+        if (safeText.trim().split(/\s+/).length > 2) {
             return;
         }
 
         const player = room.players[room.turnIndex];
 
-        const msg = { name: player.name, text: text };
+        const msg = { name: player.name, text: safeText };
         io.to(roomCode).emit('newChatMessage', msg);
 
         room.turnIndex++;
