@@ -37,6 +37,17 @@
             <div id="lobby-list" style="flex:1; overflow-y:auto;"></div>
 
             <div id="host-controls" class="hidden">
+                <div
+                    style="margin-bottom: 15px; background: rgba(255,255,255,0.05); padding: 10px; border-radius: 12px;">
+                    <label style="color: var(--text-dim); font-size: 0.8rem; display: block; margin-bottom: 5px;">
+                        Language / Bahasa
+                    </label>
+                    <select id="lang-select"
+                        style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--glass-border); background: var(--bg-dark); color: white; outline: none;">
+                        <option value="en">English</option>
+                        <option value="id">Indonesia</option>
+                    </select>
+                </div>
                 <button onclick="startGame()">Start Mission</button>
             </div>
             <p style="text-align:center; font-size:0.8rem; color:var(--text-dim); margin-top:20px; opacity:0.6;">
@@ -61,7 +72,8 @@
             <div id="game-chat" class="chat-area"></div>
 
             <div id="input-area" class="hidden">
-                <input type="text" id="desc-input" placeholder="Type your description..." autocomplete="off" maxlength="20">
+                <input type="text" id="desc-input" placeholder="Type your description..." autocomplete="off"
+                    maxlength="20">
                 <button onclick="sendDesc()">Transmit</button>
             </div>
             <div id="wait-msg" style="text-align:center; padding:20px; color:var(--text-dim); font-style:italic;">

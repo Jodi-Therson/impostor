@@ -46,7 +46,15 @@ socket.on('youJoined', ({ isHost }) => {
 
 // --- GAME ---
 function startGame() { 
-    socket.emit('startGame', roomCode); 
+    // Get the selected language
+    const langSelect = document.getElementById('lang-select');
+    const selectedLang = langSelect ? langSelect.value : 'en';
+
+    // Send it to the server
+    socket.emit('startGame', { 
+        roomCode, 
+        lang: selectedLang 
+    }); 
 }
 
 socket.on('gameStarted', ({ players }) => {
