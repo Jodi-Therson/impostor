@@ -11,7 +11,7 @@ let rooms = {};
 let turnTimers = {};
 let votingTimers = {};
 
-// Expanded Word List
+// --- WORD DICTIONARIES ---
 const WORD_PACKS = {
     'en': [
         ["Apple", "Pear"], ["Banana", "Plantain"], ["Strawberry", "Raspberry"],
@@ -116,10 +116,8 @@ io.on('connection', (socket) => {
 
     // JOIN ROOM
     socket.on('joinRoom', ({ roomCode, name }) => {
-        socket.join(roomCode);
-        socket.roomCode = roomCode;
-        socket.username = name;
-        const safeName = name.substring(0, 20);
+        // Truncate name for safety
+        const safeName = (name || "Agent").substring(0, 20);
 
         socket.join(roomCode);
         socket.roomCode = roomCode;
@@ -158,7 +156,8 @@ io.on('connection', (socket) => {
         const selectedLang = lang || DEFAULT_LANG;
         const wordList = WORD_PACKS[selectedLang] || WORD_PACKS['en'];
 
-        const pair = wordList[Math.floor(Math.random() * WORDS.length)];
+        // FIXED: Use wordList.length instead of WORDS.length
+        const pair = wordList[Math.floor(Math.random() * wordList.length)];
         const flip = Math.random() < 0.5;
         room.civWord = flip ? pair[0] : pair[1];
         room.impWord = flip ? pair[1] : pair[0];
@@ -189,7 +188,6 @@ io.on('connection', (socket) => {
             round: 1
         });
 
-        // --- ADDED: Start Timer for First Player ---
         startTurnTimer(roomCode);
     });
 
@@ -218,13 +216,12 @@ io.on('connection', (socket) => {
 
         // End of Game Logic
         if (room.round > 2) {
-            startVotingPhase(roomCode); // Refactored into function
+            startVotingPhase(roomCode); 
         } else {
             io.to(roomCode).emit('nextTurn', {
                 playerId: room.players[room.turnIndex].id,
                 round: room.round
             });
-            // --- ADDED: Restart Timer for Next Player ---
             startTurnTimer(roomCode);
         }
     });
@@ -298,10 +295,8 @@ io.on('connection', (socket) => {
     socket.on('restartGame', (roomCode) => {
         const room = rooms[roomCode];
 
-        // CHECK IF ROOM EXISTS
         if (!room) {
             console.log(`[Server] Error: Room ${roomCode} not found (Might have been deleted).`);
-            // Tell the specific player who clicked that the room is gone
             socket.emit('error', 'Room expired. Please reload.');
             return;
         }
@@ -314,15 +309,17 @@ io.on('connection', (socket) => {
         room.turnIndex = 0;
         room.round = 1;
 
-        // Reset player roles to ensure a clean slate
         room.players.forEach(p => {
             p.role = null;
             p.word = null;
         });
 
+        // Use Smooth Reset (HTML Fix handles the crash now)
+        // If you prefer full reload, comment these out and uncomment forceReload
         io.to(roomCode).emit('resetLobby');
         io.to(roomCode).emit('updateLobby', room.players);
-        io.to(roomCode).emit('forceReload');
+        
+        // io.to(roomCode).emit('forceReload'); // Disabled for smoother experience
     });
 
     socket.on('leaveRoom', () => {
@@ -354,7 +351,6 @@ function handleDisconnect(socket) {
     }
 }
 
-// HELPER: START TURN TIMER (30s)
 function startTurnTimer(roomCode) {
     if (turnTimers[roomCode]) clearTimeout(turnTimers[roomCode]);
 
@@ -375,9 +371,9 @@ function startTurnTimer(roomCode) {
         }
 
         if (room.round > 2) {
-            startVotingPhase(roomCode); // Use the safe function
+            startVotingPhase(roomCode);
         } else {
-            startTurnTimer(roomCode); // Recursively start next timer
+            startTurnTimer(roomCode);
             io.to(roomCode).emit('nextTurn', {
                 playerId: room.players[room.turnIndex].id,
                 round: room.round
@@ -386,19 +382,15 @@ function startTurnTimer(roomCode) {
     }, 30000);
 }
 
-// HELPER: START VOTING (With Safe Logic)
 function startVotingPhase(roomCode) {
     const room = rooms[roomCode];
     if (!room) return;
 
-    // Send countdown
     io.to(roomCode).emit('votingCountdown', 5);
 
-    // Clear timers
     if (turnTimers[roomCode]) clearTimeout(turnTimers[roomCode]);
     if (votingTimers[roomCode]) clearTimeout(votingTimers[roomCode]);
 
-    // Wait 5s then Start Voting
     setTimeout(() => {
         const r = rooms[roomCode];
         if (!r) return;
@@ -406,7 +398,6 @@ function startVotingPhase(roomCode) {
         r.state = 'voting';
         io.to(roomCode).emit('startVoting');
 
-        // SAFETY FORCE END (60s)
         votingTimers[roomCode] = setTimeout(() => {
             console.log(`[${roomCode}] Force ending voting phase due to timeout.`);
             io.to(roomCode).emit('gameOver', {
