@@ -41,11 +41,15 @@ socket.on('updateLobby', (players) => {
 });
 
 socket.on('youJoined', ({ isHost }) => {
-    if(isHost) document.getElementById('host-controls').classList.remove('hidden');
+    if(isHost) {
+        document.getElementById('host-controls').classList.remove('hidden');
+        document.getElementById('waiting-text').classList.add('hidden');
+    }
 });
 
-// --- GAME ---
+// --- GAME START (Global Scope Fix) ---
 window.startGame = function() {
+    console.log("Start button clicked!"); 
     // 1. Get Room Code
     if (!roomCode) {
         alert("Error: No room code. Please reload.");
@@ -53,7 +57,7 @@ window.startGame = function() {
         return;
     }
 
-    // 2. Get Language (Safe Check)
+    // 2. Get Language
     const langSelect = document.getElementById('lang-select');
     const selectedLang = langSelect ? langSelect.value : 'en';
 
@@ -87,15 +91,9 @@ socket.on('nextTurn', ({ playerId, round }) => {
 
     // --- RESET TIMER ANIMATION ---
     const bar = document.getElementById('timer-bar');
-    
-    // Simple trick to restart CSS animation
     bar.style.transition = 'none';
     bar.style.width = '100%';
-    
-    // Force browser reflow
     void bar.offsetWidth; 
-
-    // Start draining
     bar.style.transition = 'width 30s linear';
     bar.style.width = '0%';
 });
@@ -153,13 +151,8 @@ socket.on('startVoting', () => {
 });
 
 function selectVote(id, el) {
-    // Save the ID of the person we want to kill
     selectedVote = id;
-    
-    // Visual: Remove 'selected' class from all other items
     document.querySelectorAll('.list-item').forEach(e => e.classList.remove('selected'));
-    
-    // Visual: Add 'selected' class to the clicked item
     el.classList.add('selected');
 }
 
@@ -168,7 +161,6 @@ function submitVote() {
     socket.emit('submitVote', { roomCode, targetId: selectedVote });
     
     // HIDE the list and button, SHOW the message
-    // Instead of deleting HTML, we just hide elements
     document.getElementById('vote-list').classList.add('hidden');
     document.getElementById('vote-btn').classList.add('hidden');
     
@@ -187,14 +179,12 @@ socket.on('gameOver', (data) => {
     const desc = document.getElementById('winner-desc');
     const icon = document.getElementById('winner-icon');
     
-    // Check for TIE first
     if (data.resultType === 'tie') {
         title.innerText = "Impostor Wins (Tie Vote)";
         title.style.color = "var(--danger)";
         desc.innerText = `The group couldn't agree. The Impostor (${data.impostorName}) escaped!`;
         icon.innerText = "🤝";
     } 
-    // Normal Win Conditions
     else if (data.wasImpostor) {
         title.innerText = "Civilians Win!";
         title.style.color = "var(--primary)";
@@ -211,71 +201,29 @@ socket.on('gameOver', (data) => {
     document.getElementById('res-civ-word').innerText = data.civWord;
 });
 
-// Explicitly attach to window to ensure HTML can see it
+// Explicitly attach to window
 window.restartGame = function() {
-    console.log("Replay button clicked!"); // Debug log
-    
-    // Safety check: make sure roomCode exists
+    console.log("Replay button clicked!"); 
     if (!roomCode) {
-        console.error("No room code found");
         alert("Error: Room code lost. Reloading...");
         location.reload();
         return;
     }
-
-    // Visual feedback (optional)
-    const btn = document.querySelector('#screen-result button');
-    if(btn) btn.innerText = "Restarting...";
-
-    // Emit event to server
     socket.emit('restartGame', roomCode);
 };
 
-socket.on('resetLobby', () => {
-    // 1. Stop the countdown if it's running
-    if (countdownInterval) clearInterval(countdownInterval);
-    
-    // 2. Hide the countdown text
-    const waitMsg = document.getElementById('wait-msg');
-    waitMsg.classList.add('hidden');
-    waitMsg.innerHTML = ''; 
-    
-    // 3. CRITICAL: Reset Vote Variables
-    selectedVote = null; 
-    
-    // 4. Clear the Vote List Visuals (Just to be safe)
-    document.getElementById('vote-list').innerHTML = '';
-    
-    // 5. Reset the "Game Result" screen (Hide it)
-    document.getElementById('screen-result').classList.add('hidden');
-
-    // 6. Show Lobby
-    showScreen('screen-lobby');
+// Force Reload Listener (The Nuclear Fix)
+socket.on('forceReload', () => {
+    location.reload();
 });
 
-function leaveRoom() {
-    socket.emit('leaveRoom');
-    location.reload();
-}
-
-window.onload = () => {
-    // 1. Check URL params (Invite Links)
-    const urlParams = new URLSearchParams(window.location.search);
-    const roomParam = urlParams.get('room');
-    
-    // 2. Check Session Storage (Reloaded Game)
-    const savedName = sessionStorage.getItem('mrwhite_name');
-    const savedRoom = sessionStorage.getItem('mrwhite_room');
-
-    // Auto-fill inputs
-    if (savedName) document.getElementById('username').value = savedName;
-    
-    if (roomParam) {
-        document.getElementById('room-code').value = roomParam;
-    } else if (savedRoom) {
-        document.getElementById('room-code').value = savedRoom;
-    }
-};
+// Fallback Reset Listener (Just in case)
+socket.on('resetLobby', () => {
+    if (countdownInterval) clearInterval(countdownInterval);
+    selectedVote = null; 
+    document.getElementById('screen-result').classList.add('hidden');
+    showScreen('screen-lobby');
+});
 
 socket.on('votingCountdown', (seconds) => {
     const waitMsg = document.getElementById('wait-msg');
@@ -285,9 +233,7 @@ socket.on('votingCountdown', (seconds) => {
     let count = seconds;
     waitMsg.innerHTML = `Voting begins in <b>${count}</b>...`;
 
-    // Clear any existing timer just in case
     if (countdownInterval) clearInterval(countdownInterval);
-
     countdownInterval = setInterval(() => {
         count--;
         if (count <= 0) {
@@ -298,21 +244,52 @@ socket.on('votingCountdown', (seconds) => {
     }, 1000);
 });
 
-// --- ERROR HANDLER ---
 socket.on('error', (message) => {
     alert(message);
-    location.reload(); // Force reload to fix "Zombie" state
+    location.reload(); 
 });
 
-socket.on('forceReload', () => {
-    // Reload the page instantly
+function leaveRoom() {
+    socket.emit('leaveRoom');
     location.reload();
-});
+}
 
-// --- ENTER KEY LISTENERS ---
-document.addEventListener('DOMContentLoaded', () => {
+// --- INITIALIZATION & ENTER KEYS ---
+window.onload = () => {
+    // 1. Check URL params
+    const urlParams = new URLSearchParams(window.location.search);
+    const roomParam = urlParams.get('room');
+    
+    // 2. Check Session Storage
+    const savedName = sessionStorage.getItem('mrwhite_name');
+    const savedRoom = sessionStorage.getItem('mrwhite_room');
+
+    if (savedName) document.getElementById('username').value = savedName;
+    if (roomParam) {
+        document.getElementById('room-code').value = roomParam;
+    } else if (savedRoom) {
+        document.getElementById('room-code').value = savedRoom;
+    }
+
+    // 3. LISTENERS
+    // Join with Enter (Room Code)
+    document.getElementById('room-code').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') joinGame();
+    });
+    
+    // Join with Enter (Username)
+    document.getElementById('username').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            if(document.getElementById('room-code').value) {
+                joinGame();
+            } else {
+                document.getElementById('room-code').focus();
+            }
+        }
+    });
+
     // Send Description with Enter
     document.getElementById('desc-input').addEventListener('keypress', (e) => {
         if (e.key === 'Enter') sendDesc();
     });
-});
+};
