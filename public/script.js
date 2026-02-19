@@ -49,7 +49,6 @@ socket.on('youJoined', ({ isHost }) => {
 
 // --- GAME START (Global Scope Fix) ---
 window.startGame = function() {
-    console.log("Start button clicked!"); 
     // 1. Get Room Code
     if (!roomCode) {
         alert("Error: No room code. Please reload.");
@@ -203,7 +202,6 @@ socket.on('gameOver', (data) => {
 
 // Explicitly attach to window
 window.restartGame = function() {
-    console.log("Replay button clicked!"); 
     if (!roomCode) {
         alert("Error: Room code lost. Reloading...");
         location.reload();
