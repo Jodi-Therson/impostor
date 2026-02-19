@@ -33,27 +33,39 @@
         </div>
 
         <div id="screen-lobby" class="screen hidden">
-            <h3 style="text-align:center; font-weight:400; color:var(--text-dim);">Agents in Lobby</h3>
-            <div id="lobby-list" style="flex:1; overflow-y:auto;"></div>
+            <div style="text-align: center; margin-bottom: 20px;">
+                <h3 style="font-weight:400; color:var(--text-dim); margin:0;">Agents in Lobby</h3>
+                <div id="lobby-count" style="font-size: 0.8rem; opacity: 0.7;">Waiting...</div>
+            </div>
 
-            <div id="host-controls" class="hidden">
+            <div id="lobby-list" style="flex:1; overflow-y:auto; margin-bottom: 20px;"></div>
+
+            <div id="host-controls" class="hidden" style="display: flex; flex-direction: column; gap: 10px;">
+
                 <div
-                    style="margin-bottom: 15px; background: rgba(255,255,255,0.05); padding: 10px; border-radius: 12px;">
-                    <label style="color: var(--text-dim); font-size: 0.8rem; display: block; margin-bottom: 5px;">
-                        Language / Bahasa
+                    style="background: rgba(255,255,255,0.05); padding: 12px; border-radius: 12px; border: 1px solid var(--glass-border);">
+                    <label
+                        style="color: var(--text-dim); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 8px;">
+                        Mission Language
                     </label>
                     <select id="lang-select"
-                        style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--glass-border); background: var(--bg-dark); color: white; outline: none;">
-                        <option value="en">English</option>
-                        <option value="id">Indonesia</option>
+                        style="width: 100%; padding: 12px; border-radius: 8px; border: none; background: #0f172a; color: white; font-family: inherit; font-size: 1rem; cursor: pointer;">
+                        <option value="en">🇬🇧 English</option>
+                        <option value="id">🇮🇩 Indonesia</option>
                     </select>
                 </div>
-                <button onclick="startGame()">Start Mission</button>
+
+                <button onclick="window.startGame()" style="z-index: 1000; position: relative;">
+                    Start Mission
+                </button>
             </div>
-            <p style="text-align:center; font-size:0.8rem; color:var(--text-dim); margin-top:20px; opacity:0.6;">
-                Waiting for host...
+
+            <p id="waiting-text"
+                style="text-align:center; font-size:0.8rem; color:var(--text-dim); margin-top:20px; opacity:0.6;">
+                Waiting for host to start...
             </p>
-            <button class="secondary" onclick="leaveRoom()" style="margin-top:20px;">
+
+            <button class="secondary" onclick="leaveRoom()" style="margin-top:10px;">
                 Leave Room
             </button>
         </div>

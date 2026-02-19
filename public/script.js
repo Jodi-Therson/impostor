@@ -45,24 +45,24 @@ socket.on('youJoined', ({ isHost }) => {
 });
 
 // --- GAME ---
-function startGame() { 
-    const langSelect = document.getElementById('lang-select');
-
-    let selectedLang = 'en';
-    if (langSelect && langSelect.value) {
-        selectedLang = langSelect.value;
-    }
-
-    if (roomCode) {
-        socket.emit('startGame', { 
-            roomCode, 
-            lang: selectedLang 
-        }); 
-    } else {
-        alert("Error: Room Code missing. Please reload.");
+window.startGame = function() {
+    // 1. Get Room Code
+    if (!roomCode) {
+        alert("Error: No room code. Please reload.");
         location.reload();
+        return;
     }
-}
+
+    // 2. Get Language (Safe Check)
+    const langSelect = document.getElementById('lang-select');
+    const selectedLang = langSelect ? langSelect.value : 'en';
+
+    // 3. Send to Server
+    socket.emit('startGame', { 
+        roomCode: roomCode, 
+        lang: selectedLang 
+    });
+};
 
 socket.on('gameStarted', ({ players }) => {
     globalPlayers = players;
