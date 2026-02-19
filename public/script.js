@@ -46,15 +46,22 @@ socket.on('youJoined', ({ isHost }) => {
 
 // --- GAME ---
 function startGame() { 
-    // Get the selected language
     const langSelect = document.getElementById('lang-select');
-    const selectedLang = langSelect ? langSelect.value : 'en';
 
-    // Send it to the server
-    socket.emit('startGame', { 
-        roomCode, 
-        lang: selectedLang 
-    }); 
+    let selectedLang = 'en';
+    if (langSelect && langSelect.value) {
+        selectedLang = langSelect.value;
+    }
+
+    if (roomCode) {
+        socket.emit('startGame', { 
+            roomCode, 
+            lang: selectedLang 
+        }); 
+    } else {
+        alert("Error: Room Code missing. Please reload.");
+        location.reload();
+    }
 }
 
 socket.on('gameStarted', ({ players }) => {

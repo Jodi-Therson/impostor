@@ -289,3 +289,15 @@ button.secondary {
     cursor: pointer;
     margin-top: auto; /* Pushes it to the bottom if there's space */
 }
+
+#host-controls button {
+    position: relative;
+    z-index: 100 !important; /* Force it to the front */
+    cursor: pointer;
+}
+
+/* Ensure the language dropdown doesn't block clicks below it */
+#lang-select {
+    position: relative;
+    z-index: 101; 
+}
